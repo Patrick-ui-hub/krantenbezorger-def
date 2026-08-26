@@ -297,6 +297,14 @@ body {
   line-height: 1;
 }
 
+/* ── Bezorgnotitie ── */
+.addr-note {
+  font-size: 11px; color: var(--accent); margin-top: 5px;
+  line-height: 1.4; display: flex; align-items: flex-start; gap: 4px;
+}
+.addr-note-icon { flex-shrink: 0; font-size: 10px; margin-top: 1px; opacity: .7; }
+.addr-row.bezorgd .addr-note { opacity: .4; }
+
 .dist-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); flex-shrink: 0; text-align: right; min-width: 38px; font-variant-numeric: tabular-nums; }
 
 /* ── All done ── */
@@ -451,12 +459,12 @@ body {
         <div class="inst-card-desc">Exporteer je adressen uit Excel als CSV (puntkomma-gescheiden) en importeer ze hier. Gebruik één bestand voor zowel weekdag- als weekendadressen.</div>
         <div class="csv-box">
           <div class="csv-box-title">Verwacht CSV-formaat</div>
-          <div class="csv-code">nr;straat;kranten;dag
-3;Dorpsstraat;ST;weekdag
-5;Dorpsstraat;TT VK;weekdag
-100;Brinksweg;TT;weekend
-7;Kerkpad;ST TEL;weekdag</div>
-          <div class="csv-note"><strong>dag</strong> = <code>weekdag</code> (elke dag bezorgen) of <code>weekend</code> (alleen zaterdag/zondag). Optioneel: voeg <code>lat</code> en <code>lng</code> toe als 5e en 6e kolom voor GPS-sortering. Scheidingsteken mag ook komma zijn.</div>
+          <div class="csv-code">nr;straat;kranten;dag;lat;lng;notitie
+3;Dorpsstraat;ST;weekdag;52.12302;6.50104;
+5;Dorpsstraat;TT VK;weekdag;52.12315;6.50112;achteringang
+100;Brinksweg;TT;weekend;;;brievenbus links
+7;Kerkpad;ST TEL;weekdag;;;hond, bellen</div>
+          <div class="csv-note"><strong>dag</strong> = <code>weekdag</code> of <code>weekend</code>. <strong>lat/lng</strong> voor GPS-sortering (optioneel). <strong>notitie</strong> voor bezorgbijzonderheden (optioneel). Scheidingsteken mag ook komma zijn.</div>
         </div>
         <input type="file" id="csvInput" accept=".csv,.txt" style="display:none" onchange="handleImport(event)">
         <button class="action-btn" onclick="document.getElementById('csvInput').click()">
@@ -533,6 +541,9 @@ const KRANTEN = {
   TEL: { naam: 'Telegraaf',          badge: 'Telegraaf',    kleur: '#1850c4' },
   TR:  { naam: 'Trouw',              badge: 'Trouw',        kleur: '#1a7a50' },
   ND:  { naam: 'Nederlands Dagblad', badge: 'Ned. Dagblad', kleur: '#5c30b0' },
+  NRC: { naam: 'NRC Handelsblad',    badge: 'NRC',          kleur: '#8b1a2e' },
+  AT:  { naam: 'AT',                 badge: 'AT',           kleur: '#c07820' },
+  ZP:  { naam: 'ZP',                 badge: 'ZP',           kleur: '#1e6898' },
 };
 
 // ── Voorbeeldroute (weekdag-adressen = elke dag; weekend = alleen za/zo) ─────
@@ -631,6 +642,7 @@ let state = {
         id: i+1, nr: a.nr, straat: a.straat,
         dag: a.dag || 'weekdag',
         kranten: a.kranten || [],
+        notitie: a.notitie || '',
         lat: a.lat ?? null, lng: a.lng ?? null,
         bezorgd: false, afstand: null,
       }));
@@ -655,6 +667,7 @@ function slaRouteOp() {
   try {
     localStorage.setItem('kb_route', JSON.stringify(state.adressen.map(a => ({
       nr: a.nr, straat: a.straat, dag: a.dag, kranten: a.kranten,
+      notitie: a.notitie || '',
       lat: a.lat ?? null, lng: a.lng ?? null,
     }))));
   } catch(e) {}
@@ -682,7 +695,7 @@ function parseCSV(tekst) {
   const HEADERS = ['nr','huisnummer','nummer','straat','straatnaam','adres','kranten','krant','codes','dag','type','route','lat','latitude','lng','lon','longitude'];
   const heeftHeader = eersteRij.some(h => HEADERS.includes(h));
 
-  let nrI=0, strI=1, krI=2, dagI=3, latI=4, lngI=5;
+  let nrI=0, strI=1, krI=2, dagI=3, latI=4, lngI=5, notI=-1;
   if (heeftHeader) {
     eersteRij.forEach((h,i) => {
       if (['nr','huisnummer','nummer','hnr'].includes(h)) nrI=i;
@@ -691,6 +704,7 @@ function parseCSV(tekst) {
       else if (['dag','type','route','frequentie','soort'].includes(h)) dagI=i;
       else if (['lat','latitude'].includes(h)) latI=i;
       else if (['lng','lon','longitude'].includes(h)) lngI=i;
+      else if (['notitie','opmerking','note','notes','bijzonderheden','extra','info'].includes(h)) notI=i;
     });
   }
 
@@ -704,6 +718,7 @@ function parseCSV(tekst) {
       id: idx+1, nr: v[nrI]||'', straat: v[strI]||'',
       dag: normaliseerDag(v[dagI]),
       kranten: kr,
+      notitie: notI >= 0 ? (v[notI] || '') : '',
       lat: isNaN(lat) ? null : lat,
       lng: isNaN(lng) ? null : lng,
       bezorgd: false, afstand: null,
@@ -737,9 +752,11 @@ function handleImport(event) {
 }
 
 function exportCSV() {
-  const regels = ['nr;straat;kranten;dag;lat;lng'];
+  const heeftNotitie = state.adressen.some(a => a.notitie);
+  const regels = [heeftNotitie ? 'nr;straat;kranten;dag;lat;lng;notitie' : 'nr;straat;kranten;dag;lat;lng'];
   state.adressen.forEach(a => {
-    regels.push(`${a.nr};${a.straat};${a.kranten.join(' ')};${a.dag};${a.lat??''};${a.lng??''}`);
+    const basis = `${a.nr};${a.straat};${a.kranten.join(' ')};${a.dag};${a.lat??''};${a.lng??''}`;
+    regels.push(heeftNotitie ? `${basis};${a.notitie||''}` : basis);
   });
   const csv = regels.join('\n');
   const uitvoer = document.getElementById('exportOutput');
@@ -902,6 +919,9 @@ function render() {
       const coords = (a.lat != null && a.lng != null)
         ? `<div class="addr-coords">${fmtGraad(a.lat,'N','Z')}&nbsp;&nbsp;${fmtGraad(a.lng,'O','W')}</div>`
         : '';
+      const notitie = a.notitie
+        ? `<div class="addr-note"><span class="addr-note-icon">⚑</span>${a.notitie}</div>`
+        : '';
       return `<div class="addr-row${a.bezorgd?' bezorgd':''}${toonWEBadge&&isWE?' is-weekend':''}" onclick="toggleBezorgd(${a.id})">
         <div class="check-box">${a.bezorgd ? '✓' : ''}</div>
         <div class="addr-body">
@@ -910,7 +930,7 @@ function render() {
             <span class="street">${a.straat}</span>
           </div>
           <div class="badge-row">${badges}${weBadge}</div>
-          ${coords}
+          ${notitie}${coords}
         </div>${dist}
       </div>`;
     };
@@ -985,11 +1005,10 @@ function toggleHide() {
 
 function requestGPS() {
   if (!navigator.geolocation) { toon('GPS niet beschikbaar', true); return; }
-  if (!state.adressen.some(a => a.lat != null)) {
-    toon('Voeg lat/lng toe aan de CSV voor GPS-sortering', true); return;
-  }
+
   const btn = document.getElementById('gpsBtn');
   btn.style.opacity = '.5';
+  const heeftRouteCoords = state.adressen.some(a => a.lat != null);
 
   // Stop eventuele vorige watch
   if (state.gpsWatch != null) {
@@ -1003,22 +1022,30 @@ function requestGPS() {
     const { latitude: lat, longitude: lng } = pos.coords;
     state.posLive = pos.coords;
 
-    // Afstanden bijwerken
-    state.adressen.forEach(a => {
-      a.afstand = (a.lat!=null && a.lng!=null) ? berekenAfstand(lat, lng, a.lat, a.lng) : null;
-    });
+    // Afstanden bijwerken als de route coördinaten heeft
+    if (heeftRouteCoords) {
+      state.adressen.forEach(a => {
+        a.afstand = (a.lat!=null && a.lng!=null) ? berekenAfstand(lat, lng, a.lat, a.lng) : null;
+      });
+    }
 
     if (eerste) {
       eerste = false;
-      state.gpsActief = true;
       btn.style.opacity = '';
       btn.classList.add('active');
-      render();
-      toon('Gesorteerd op afstand');
-      fetchWeer(lat, lng); // eerste weerfetch
+      fetchWeer(lat, lng);
+
+      if (heeftRouteCoords) {
+        state.gpsActief = true;
+        render();
+        toon('Gesorteerd op afstand');
+      } else {
+        renderWxStrip();
+        toon('GPS actief — weer & positie geladen');
+      }
     } else {
-      renderWxStrip();     // alleen strip bijwerken, geen volledige re-render
-      fetchWeer(lat, lng); // iedere 5 min automatisch vernieuwd via cache
+      renderWxStrip();
+      fetchWeer(lat, lng);
     }
   }, () => {
     btn.style.opacity = '';
