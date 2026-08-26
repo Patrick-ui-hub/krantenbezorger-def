@@ -1,0 +1,1111 @@
+<title>Krantenbezorger</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root {
+  --bg:             #141210;
+  --surface:        #1e1b15;
+  --surface-raised: #272419;
+  --border:         #343020;
+  --border-faint:   #29261c;
+  --accent:         #f09a1f;
+  --accent-dim:     rgba(240,154,31,.13);
+  --text-1:         #ede5cf;
+  --text-2:         #8c8070;
+  --text-3:         #4d4840;
+  --ok:             #47a876;
+  --ok-dim:         rgba(71,168,118,.12);
+  --danger:         #e05050;
+  --danger-dim:     rgba(224,80,80,.12);
+  --font-sans:      'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono:      'IBM Plex Mono', monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ede8d8; --surface: #f7f3e8; --surface-raised: #ffffff;
+    --border: #cfc8b0; --border-faint: #ddd8c8;
+    --accent: #c07010; --accent-dim: rgba(192,112,16,.11);
+    --text-1: #18160f; --text-2: #6b6050; --text-3: #a09080;
+    --ok: #2e8a5c; --ok-dim: rgba(46,138,92,.10);
+    --danger: #c03030; --danger-dim: rgba(192,48,48,.10);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141210; --surface: #1e1b15; --surface-raised: #272419;
+  --border: #343020; --border-faint: #29261c;
+  --accent: #f09a1f; --accent-dim: rgba(240,154,31,.13);
+  --text-1: #ede5cf; --text-2: #8c8070; --text-3: #4d4840;
+  --ok: #47a876; --ok-dim: rgba(71,168,118,.12);
+  --danger: #e05050; --danger-dim: rgba(224,80,80,.12);
+}
+:root[data-theme="light"] {
+  --bg: #ede8d8; --surface: #f7f3e8; --surface-raised: #ffffff;
+  --border: #cfc8b0; --border-faint: #ddd8c8;
+  --accent: #c07010; --accent-dim: rgba(192,112,16,.11);
+  --text-1: #18160f; --text-2: #6b6050; --text-3: #a09080;
+  --ok: #2e8a5c; --ok-dim: rgba(46,138,92,.10);
+  --danger: #c03030; --danger-dim: rgba(192,48,48,.10);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-1);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.app-name {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: .02em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.header-right { display: flex; align-items: center; gap: 7px; }
+.clock { font-family: var(--font-mono); font-size: 13px; color: var(--text-2); }
+.icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-2); font-size: 14px;
+  transition: border-color .15s, color .15s, background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover, .icon-btn.active {
+  border-color: var(--accent); color: var(--accent); background: var(--accent-dim);
+}
+.krant-summary {
+  display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none;
+}
+.krant-summary::-webkit-scrollbar { display: none; }
+.krant-chip {
+  display: flex; align-items: center; gap: 5px;
+  border-radius: 7px; padding: 4px 9px 4px 7px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  flex-shrink: 0;
+  transition: border-color .2s;
+}
+.krant-chip.all-done { border-color: var(--ok); background: var(--ok-dim); }
+.krant-dot { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+.krant-code { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text-2); letter-spacing: .04em; }
+.krant-count { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--text-1); font-variant-numeric: tabular-nums; }
+.krant-chip.all-done .krant-count { color: var(--ok); }
+.progress-bar-wrap { height: 2px; background: var(--border-faint); margin-top: 10px; border-radius: 2px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s ease; }
+
+/* ── Modus schakelaar ── */
+.modus-row {
+  display: flex;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: var(--header-h, 100px);
+  z-index: 9;
+}
+.modus-tab {
+  flex: 1;
+  padding: 9px 8px 8px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: .04em;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s, background .15s;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+.modus-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--accent-dim);
+}
+.modus-tab .auto-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  margin-left: 5px;
+  vertical-align: middle;
+  margin-bottom: 1px;
+}
+.modus-tab .count-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-3);
+  margin-left: 4px;
+}
+.modus-tab.active .count-badge { color: var(--accent); opacity: .7; }
+
+/* ── Route controls ── */
+.route-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-faint);
+}
+.ctrl-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ctrl-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.ctrl-btn svg {
+  width: 13px; height: 13px; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
+}
+.route-stat {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 12px; color: var(--text-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.route-stat strong { color: var(--text-1); font-weight: 600; }
+
+/* ── Address list ── */
+.address-list { flex: 1; overflow-y: auto; padding-bottom: 72px; }
+.section-label {
+  padding: 10px 16px 4px;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: .09em;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border-faint); }
+
+.addr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-faint);
+  cursor: pointer;
+  transition: background .12s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.addr-row:active { background: var(--surface); }
+.addr-row.bezorgd { opacity: .35; }
+/* Weekend-only adressen krijgen een subtiele accentlijn links */
+.addr-row.is-weekend {
+  border-left: 3px solid var(--accent);
+  padding-left: 13px;
+}
+.addr-row.bezorgd.is-weekend { border-left-color: var(--ok); }
+
+.check-box {
+  width: 26px; height: 26px; border-radius: 7px;
+  border: 1.5px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .15s, border-color .15s;
+  color: transparent; font-size: 13px; font-weight: 700;
+}
+.addr-row.bezorgd .check-box { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+.addr-body { flex: 1; min-width: 0; }
+.addr-line1 { display: flex; align-items: baseline; gap: 7px; margin-bottom: 4px; }
+.house-nr {
+  font-family: var(--font-mono); font-size: 19px; font-weight: 600;
+  color: var(--text-1); line-height: 1; min-width: 36px; flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.street { font-size: 14px; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.addr-row.bezorgd .house-nr, .addr-row.bezorgd .street { text-decoration: line-through; text-decoration-color: var(--text-3); }
+
+.badge-row { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.badge { font-family: var(--font-mono); font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; color: #fff; letter-spacing: .01em; }
+.we-badge {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+  padding: 2px 5px; border-radius: 4px; letter-spacing: .04em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ── Weer & GPS strip ── */
+.wx-strip {
+  display: none; align-items: center; gap: 0;
+  padding: 6px 0 2px; overflow-x: auto; scrollbar-width: none;
+}
+.wx-strip.toon { display: flex; }
+.wx-strip::-webkit-scrollbar { display: none; }
+.wx-item {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-2);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+  padding-right: 10px;
+}
+.wx-item b { color: var(--text-1); font-weight: 600; }
+.wx-item .lbl { color: var(--text-3); font-size: 9px; }
+.wx-pijl { display: inline-block; font-size: 10px; margin-right: 1px; }
+.wx-div { width: 1px; height: 10px; background: var(--border); flex-shrink: 0; margin: 0 4px 0 0; align-self: center; }
+
+/* ── Adres coördinaten ── */
+.addr-coords {
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-3);
+  margin-top: 4px; letter-spacing: .01em; font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.dist-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); flex-shrink: 0; text-align: right; min-width: 38px; font-variant-numeric: tabular-nums; }
+
+/* ── All done ── */
+.all-done-msg { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 56px 32px; text-align: center; gap: 14px; }
+.all-done-msg.show { display: flex; }
+.all-done-icon { font-size: 52px; line-height: 1; }
+.all-done-title { font-family: var(--font-mono); font-size: 20px; font-weight: 600; color: var(--ok); }
+.all-done-sub { font-size: 14px; color: var(--text-2); line-height: 1.55; max-width: 260px; }
+.all-done-btn { margin-top: 8px; padding: 10px 24px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 10px; font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--text-1); cursor: pointer; }
+
+/* ── Invoer tab ── */
+.invoer-screen { display: none; padding: 20px 16px 80px; }
+.invoer-screen.show { display: block; }
+.screen-heading { font-size: 17px; font-weight: 600; color: var(--text-1); margin-bottom: 5px; }
+.screen-sub { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 20px; }
+.invoer-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 11px; margin-bottom: 8px; }
+.invoer-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 3px 7px; border-radius: 5px; color: #fff; min-width: 36px; text-align: center; letter-spacing: .04em; }
+.invoer-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text-1); }
+.invoer-ref { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
+.invoer-input { font-family: var(--font-mono); font-size: 18px; font-weight: 600; color: var(--text-1); background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; width: 56px; height: 38px; text-align: center; outline: none; transition: border-color .15s; }
+.invoer-input:focus { border-color: var(--accent); }
+.invoer-save { display: block; width: 100%; margin-top: 20px; padding: 14px; background: var(--accent); color: #fff; font-family: var(--font-sans); font-size: 15px; font-weight: 600; border: none; border-radius: 11px; cursor: pointer; transition: opacity .15s; }
+.invoer-save:active { opacity: .82; }
+
+/* ── Instellingen tab ── */
+.inst-screen { display: none; padding: 20px 16px 80px; }
+.inst-screen.show { display: block; }
+.inst-section { margin-bottom: 28px; }
+.inst-section-title {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em; color: var(--text-3);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.inst-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border-faint); }
+.inst-card { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
+.inst-card-body { padding: 14px; }
+.inst-card-desc { font-size: 13px; color: var(--text-2); line-height: 1.55; margin-bottom: 12px; }
+.csv-box { background: var(--bg); border: 1px solid var(--border-faint); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+.csv-box-title { font-family: var(--font-mono); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-3); margin-bottom: 6px; }
+.csv-code { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); line-height: 1.7; white-space: pre; overflow-x: auto; }
+.csv-note { font-size: 12px; color: var(--text-3); line-height: 1.5; margin-top: 8px; }
+.action-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 11px 14px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 9px;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: opacity .15s; margin-bottom: 8px;
+}
+.action-btn:active { opacity: .82; }
+.action-btn.secondary { background: var(--surface-raised); color: var(--text-1); border: 1px solid var(--border); }
+.action-btn.danger { background: var(--danger-dim); color: var(--danger); border: 1px solid var(--danger); }
+.action-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.export-output { display: none; width: 100%; margin-top: 8px; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-2); line-height: 1.6; resize: vertical; min-height: 100px; max-height: 200px; outline: none; }
+.route-info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; font-size: 13px; color: var(--text-2); border-bottom: 1px solid var(--border-faint); }
+.route-info-row:last-child { border-bottom: none; }
+.route-info-val { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-1); }
+
+/* ── Tab bar ── */
+.tab-bar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; height: 58px; z-index: 20;
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-3); font-size: 10px; font-family: var(--font-sans); font-weight: 500;
+  letter-spacing: .03em; text-transform: uppercase;
+  transition: color .15s; -webkit-tap-highlight-color: transparent;
+}
+.tab-btn.active { color: var(--accent); }
+.tab-icon { font-size: 19px; line-height: 1; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 68px; left: 50%; transform: translateX(-50%);
+  background: var(--ok); color: #fff;
+  padding: 9px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 500;
+  z-index: 30; pointer-events: none; opacity: 0;
+  transition: opacity .2s; white-space: nowrap; max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; }
+.toast.fout { background: var(--danger); }
+
+@media (prefers-reduced-motion: reduce) { *, .progress-bar-fill { transition: none !important; } }
+</style>
+
+<!-- ── Header ── -->
+<header class="app-header" id="appHeader">
+  <div class="header-top">
+    <div class="app-name"><span>📰</span>Krantenbezorger</div>
+    <div class="header-right">
+      <span class="clock" id="clock"></span>
+      <button class="icon-btn" id="wakeLockBtn" title="Scherm aan houden" onclick="toggleWakeLock()">☀</button>
+      <button class="icon-btn" title="Thema wisselen" onclick="toggleTheme()">◑</button>
+    </div>
+  </div>
+  <div class="wx-strip" id="wxStrip"></div>
+  <div class="krant-summary" id="krantSummary"></div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+</header>
+
+<!-- ── Modus schakelaar ── -->
+<div class="modus-row" id="modusRow">
+  <button class="modus-tab active" id="modusWD" onclick="setModus('weekdag')">
+    Weekdag<span class="count-badge" id="wdCount"></span>
+  </button>
+  <button class="modus-tab" id="modusWE" onclick="setModus('weekend')">
+    Weekend<span class="count-badge" id="weCount"></span>
+  </button>
+</div>
+
+<!-- ── Route tab ── -->
+<div id="routeTab">
+  <div class="route-controls">
+    <button class="ctrl-btn" id="gpsBtn" onclick="requestGPS()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg>
+      GPS
+    </button>
+    <button class="ctrl-btn" id="hideBtn" onclick="toggleHide()">
+      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Verberg bezorgd
+    </button>
+    <span class="route-stat" id="routeStat"></span>
+  </div>
+  <div class="address-list" id="addressList"></div>
+  <div class="all-done-msg" id="allDoneMsg">
+    <div class="all-done-icon">🎉</div>
+    <div class="all-done-title">Klaar!</div>
+    <div class="all-done-sub">Alle kranten bezorgd. Goed gedaan!</div>
+    <button class="all-done-btn" onclick="resetRoute()">↺ Nieuwe ronde</button>
+  </div>
+</div>
+
+<!-- ── Invoer tab ── -->
+<div class="invoer-screen" id="invoerScreen">
+  <div class="screen-heading">Dagelijkse invoer</div>
+  <div class="screen-sub">Vul het werkelijk bezorgde aantal in per krant. De routetelling staat rechts als referentie.</div>
+  <div id="invoerRows"></div>
+  <button class="invoer-save" onclick="saveInvoer()">Opslaan</button>
+</div>
+
+<!-- ── Instellingen tab ── -->
+<div class="inst-screen" id="instScreen">
+  <div class="inst-section">
+    <div class="inst-section-title">Route importeren</div>
+    <div class="inst-card">
+      <div class="inst-card-body">
+        <div class="inst-card-desc">Exporteer je adressen uit Excel als CSV (puntkomma-gescheiden) en importeer ze hier. Gebruik één bestand voor zowel weekdag- als weekendadressen.</div>
+        <div class="csv-box">
+          <div class="csv-box-title">Verwacht CSV-formaat</div>
+          <div class="csv-code">nr;straat;kranten;dag
+3;Dorpsstraat;ST;weekdag
+5;Dorpsstraat;TT VK;weekdag
+100;Brinksweg;TT;weekend
+7;Kerkpad;ST TEL;weekdag</div>
+          <div class="csv-note"><strong>dag</strong> = <code>weekdag</code> (elke dag bezorgen) of <code>weekend</code> (alleen zaterdag/zondag). Optioneel: voeg <code>lat</code> en <code>lng</code> toe als 5e en 6e kolom voor GPS-sortering. Scheidingsteken mag ook komma zijn.</div>
+        </div>
+        <input type="file" id="csvInput" accept=".csv,.txt" style="display:none" onchange="handleImport(event)">
+        <button class="action-btn" onclick="document.getElementById('csvInput').click()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          CSV importeren
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="inst-section">
+    <div class="inst-section-title">Route exporteren</div>
+    <div class="inst-card">
+      <div class="inst-card-body">
+        <div class="inst-card-desc">Kopieer de volledige route (weekdag + weekend) als CSV naar het klembord.</div>
+        <button class="action-btn secondary" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Route naar klembord kopiëren
+        </button>
+        <textarea class="export-output" id="exportOutput" readonly rows="5" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="inst-section">
+    <div class="inst-section-title">App delen</div>
+    <div class="inst-card">
+      <div class="inst-card-body">
+        <div class="inst-card-desc">Deel de app-link met andere bezorgers. Iedereen importeert zijn eigen CSV-routebestand.</div>
+        <button class="action-btn secondary" onclick="deelApp()">
+          <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          App-link kopiëren
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="inst-section">
+    <div class="inst-section-title">Ronde</div>
+    <div class="inst-card">
+      <div class="route-info-row"><span>Weekdag-adressen</span><span class="route-info-val" id="infoWD">—</span></div>
+      <div class="route-info-row"><span>Weekend-extra</span><span class="route-info-val" id="infoWE">—</span></div>
+      <div class="route-info-row"><span>Bezorgd vandaag</span><span class="route-info-val" id="infoBez">—</span></div>
+      <div class="route-info-row"><span>GPS-coördinaten</span><span class="route-info-val" id="infoGPS">—</span></div>
+    </div>
+    <button class="action-btn danger" style="margin-top:8px" onclick="resetRoute()">
+      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      Ronde resetten
+    </button>
+  </div>
+</div>
+
+<!-- ── Tab bar ── -->
+<nav class="tab-bar">
+  <button class="tab-btn active" id="tabRoute" onclick="switchTab('route')">
+    <span class="tab-icon">🗺</span>Route
+  </button>
+  <button class="tab-btn" id="tabInvoer" onclick="switchTab('invoer')">
+    <span class="tab-icon">📋</span>Invoer
+  </button>
+  <button class="tab-btn" id="tabInst" onclick="switchTab('inst')">
+    <span class="tab-icon">⚙</span>Instellingen
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Krant definities ─────────────────────────────────────────────────────────
+const KRANTEN = {
+  ST:  { naam: 'Stentor',            badge: 'Stentor',      kleur: '#d94e18' },
+  TT:  { naam: 'Tubantia',           badge: 'Tubantia',     kleur: '#c41230' },
+  VK:  { naam: 'Volkskrant',         badge: 'Volkskrant',   kleur: '#a81030' },
+  TEL: { naam: 'Telegraaf',          badge: 'Telegraaf',    kleur: '#1850c4' },
+  TR:  { naam: 'Trouw',              badge: 'Trouw',        kleur: '#1a7a50' },
+  ND:  { naam: 'Nederlands Dagblad', badge: 'Ned. Dagblad', kleur: '#5c30b0' },
+};
+
+// ── Voorbeeldroute (weekdag-adressen = elke dag; weekend = alleen za/zo) ─────
+const VOORBEELD = [
+  { nr:  '3', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['ST'],       lat: 52.12302, lng: 6.50104 },
+  { nr:  '5', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['TT','VK'],  lat: 52.12315, lng: 6.50112 },
+  { nr:  '7', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['ST'],       lat: 52.12328, lng: 6.50120 },
+  { nr: '12', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['TEL'],      lat: 52.12346, lng: 6.50138 },
+  { nr: '15', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['ST','TR'],  lat: 52.12361, lng: 6.50154 },
+  { nr: '18', straat: 'Dorpsstraat',  dag: 'weekend', kranten: ['VK'],       lat: 52.12375, lng: 6.50168 },
+  { nr: '22', straat: 'Dorpsstraat',  dag: 'weekend', kranten: ['ND'],       lat: 52.12395, lng: 6.50185 },
+  { nr:  '2', straat: 'Molenweg',     dag: 'weekdag', kranten: ['TT'],       lat: 52.12280, lng: 6.50200 },
+  { nr:  '4', straat: 'Molenweg',     dag: 'weekdag', kranten: ['ST','TEL'], lat: 52.12292, lng: 6.50218 },
+  { nr:  '8', straat: 'Molenweg',     dag: 'weekdag', kranten: ['VK','TR'],  lat: 52.12310, lng: 6.50240 },
+  { nr: '14', straat: 'Molenweg',     dag: 'weekend', kranten: ['ST'],       lat: 52.12334, lng: 6.50265 },
+  { nr: '20', straat: 'Molenweg',     dag: 'weekend', kranten: ['ND','TT'],  lat: 52.12358, lng: 6.50290 },
+  { nr:  '1', straat: 'Kerkpad',      dag: 'weekdag', kranten: ['TR'],       lat: 52.12262, lng: 6.50082 },
+  { nr:  '3', straat: 'Kerkpad',      dag: 'weekdag', kranten: ['ST','ND'],  lat: 52.12250, lng: 6.50090 },
+  { nr:  '7', straat: 'Kerkpad',      dag: 'weekdag', kranten: ['TT'],       lat: 52.12238, lng: 6.50072 },
+  { nr:  '2', straat: 'Beekstraat',   dag: 'weekdag', kranten: ['VK'],       lat: 52.12402, lng: 6.50305 },
+  { nr:  '6', straat: 'Beekstraat',   dag: 'weekdag', kranten: ['ST','TEL'], lat: 52.12420, lng: 6.50322 },
+  { nr: '10', straat: 'Beekstraat',   dag: 'weekdag', kranten: ['TR','ND'],  lat: 52.12438, lng: 6.50340 },
+  { nr: '13', straat: 'Beekstraat',   dag: 'weekend', kranten: ['TT'],       lat: 52.12450, lng: 6.50355 },
+  { nr: '17', straat: 'Beekstraat',   dag: 'weekend', kranten: ['ST','VK'],  lat: 52.12468, lng: 6.50372 },
+  { nr:  '1', straat: 'Veldweg',      dag: 'weekdag', kranten: ['TEL'],      lat: 52.12200, lng: 6.50050 },
+  { nr:  '5', straat: 'Veldweg',      dag: 'weekdag', kranten: ['ST'],       lat: 52.12182, lng: 6.50038 },
+  { nr:  '8', straat: 'Veldweg',      dag: 'weekdag', kranten: ['VK','TR'],  lat: 52.12168, lng: 6.50028 },
+  { nr: '12', straat: 'Veldweg',      dag: 'weekend', kranten: ['ND'],       lat: 52.12150, lng: 6.50014 },
+  { nr:  '3', straat: 'Schoolstraat', dag: 'weekdag', kranten: ['TT','VK'],  lat: 52.12500, lng: 6.50150 },
+  { nr:  '9', straat: 'Schoolstraat', dag: 'weekdag', kranten: ['TEL'],      lat: 52.12518, lng: 6.50168 },
+  { nr: '15', straat: 'Schoolstraat', dag: 'weekdag', kranten: ['ST','TR'],  lat: 52.12536, lng: 6.50186 },
+  { nr:  '2', straat: 'Eikenstraat',  dag: 'weekdag', kranten: ['ND'],       lat: 52.12560, lng: 6.50242 },
+  { nr:  '7', straat: 'Eikenstraat',  dag: 'weekdag', kranten: ['ST','VK'],  lat: 52.12578, lng: 6.50258 },
+  { nr: '11', straat: 'Eikenstraat',  dag: 'weekend', kranten: ['TT','TEL'], lat: 52.12595, lng: 6.50274 },
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function isWeekend() {
+  const d = new Date().getDay();
+  return d === 0 || d === 6; // 0=zondag, 6=zaterdag
+}
+
+function normaliseerDag(raw) {
+  const s = (raw || '').toLowerCase().trim();
+  if (['weekend','we','za','zo','zaterdag','zondag','sat','sun'].includes(s)) return 'weekend';
+  return 'weekdag'; // standaard
+}
+
+function adressenInModus(modus) {
+  // weekdag → alleen 'weekdag' adressen
+  // weekend → alle adressen (weekdag + weekend)
+  if (modus === 'weekend') return state.adressen;
+  return state.adressen.filter(a => a.dag === 'weekdag');
+}
+
+function berekenAfstand(lat1, lng1, lat2, lng2) {
+  const R = 6371000, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function fmtAfstand(m) { return m < 1000 ? `${Math.round(m)} m` : `${(m/1000).toFixed(1)} km`; }
+
+function totalen(adressenlijst) {
+  const res = {};
+  Object.keys(KRANTEN).forEach(k => { res[k] = { totaal: 0, resterend: 0 }; });
+  adressenlijst.forEach(a => a.kranten.forEach(k => {
+    if (res[k]) { res[k].totaal++; if (!a.bezorgd) res[k].resterend++; }
+  }));
+  return res;
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let state = {
+  adressen: VOORBEELD.map((a, i) => ({ ...a, id: i+1, bezorgd: false, afstand: null })),
+  modus: isWeekend() ? 'weekend' : 'weekdag',
+  modusHandmatig: false,
+  verbergBezorgd: false,
+  gpsActief: false,
+  gpsWatch: null,
+  posLive: null,
+  weerData: null,
+  weerTijd: 0,
+  wakeLock: null,
+  thema: null,
+};
+
+// ── Opgeslagen data herstellen ────────────────────────────────────────────────
+(function init() {
+  try {
+    const t = localStorage.getItem('kb_thema');
+    if (t) { state.thema = t; document.documentElement.setAttribute('data-theme', t); }
+
+    const route = JSON.parse(localStorage.getItem('kb_route') || 'null');
+    if (route && route.length) {
+      state.adressen = route.map((a, i) => ({
+        id: i+1, nr: a.nr, straat: a.straat,
+        dag: a.dag || 'weekdag',
+        kranten: a.kranten || [],
+        lat: a.lat ?? null, lng: a.lng ?? null,
+        bezorgd: false, afstand: null,
+      }));
+    }
+
+    const vg = JSON.parse(localStorage.getItem('kb_voortgang') || 'null');
+    if (vg) vg.forEach(v => {
+      const a = state.adressen.find(x => x.id === v.id);
+      if (a) a.bezorgd = v.bezorgd;
+    });
+
+    const savedModus = localStorage.getItem('kb_modus');
+    if (savedModus) { state.modus = savedModus; state.modusHandmatig = true; }
+  } catch(e) {}
+})();
+
+// ── Persistentie ──────────────────────────────────────────────────────────────
+function slaVoortgangOp() {
+  try { localStorage.setItem('kb_voortgang', JSON.stringify(state.adressen.map(a => ({ id: a.id, bezorgd: a.bezorgd })))); } catch(e) {}
+}
+function slaRouteOp() {
+  try {
+    localStorage.setItem('kb_route', JSON.stringify(state.adressen.map(a => ({
+      nr: a.nr, straat: a.straat, dag: a.dag, kranten: a.kranten,
+      lat: a.lat ?? null, lng: a.lng ?? null,
+    }))));
+  } catch(e) {}
+}
+
+// ── CSV parser ────────────────────────────────────────────────────────────────
+function parseCSV(tekst) {
+  const regels = tekst.trim().split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+  if (!regels.length) throw new Error('Leeg bestand');
+  const delim = regels[0].split(';').length > regels[0].split(',').length ? ';' : ',';
+
+  function parseRegel(r) {
+    const velden = []; let cur = '', inQ = false;
+    for (let i = 0; i < r.length; i++) {
+      const c = r[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === delim && !inQ) { velden.push(cur.trim().replace(/^"|"$/g,'')); cur = ''; }
+      else { cur += c; }
+    }
+    velden.push(cur.trim().replace(/^"|"$/g,''));
+    return velden;
+  }
+
+  const eersteRij = parseRegel(regels[0]).map(c => c.toLowerCase().replace(/[.\s]/g,''));
+  const HEADERS = ['nr','huisnummer','nummer','straat','straatnaam','adres','kranten','krant','codes','dag','type','route','lat','latitude','lng','lon','longitude'];
+  const heeftHeader = eersteRij.some(h => HEADERS.includes(h));
+
+  let nrI=0, strI=1, krI=2, dagI=3, latI=4, lngI=5;
+  if (heeftHeader) {
+    eersteRij.forEach((h,i) => {
+      if (['nr','huisnummer','nummer','hnr'].includes(h)) nrI=i;
+      else if (['straat','straatnaam','adres','street'].includes(h)) strI=i;
+      else if (['kranten','krant','codes','krantcodes'].includes(h)) krI=i;
+      else if (['dag','type','route','frequentie','soort'].includes(h)) dagI=i;
+      else if (['lat','latitude'].includes(h)) latI=i;
+      else if (['lng','lon','longitude'].includes(h)) lngI=i;
+    });
+  }
+
+  const data = heeftHeader ? regels.slice(1) : regels;
+  return data.map((regel, idx) => {
+    const v = parseRegel(regel);
+    const kr = (v[krI]||'').replace(/,/g,' ').toUpperCase().split(/\s+/).filter(k => KRANTEN[k]);
+    const lat = parseFloat((v[latI]||'').replace(',','.'));
+    const lng = parseFloat((v[lngI]||'').replace(',','.'));
+    return {
+      id: idx+1, nr: v[nrI]||'', straat: v[strI]||'',
+      dag: normaliseerDag(v[dagI]),
+      kranten: kr,
+      lat: isNaN(lat) ? null : lat,
+      lng: isNaN(lng) ? null : lng,
+      bezorgd: false, afstand: null,
+    };
+  }).filter(a => a.nr && a.straat && a.kranten.length > 0);
+}
+
+// ── Import / Export / Deel ────────────────────────────────────────────────────
+function handleImport(event) {
+  const bestand = event.target.files[0];
+  if (!bestand) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = parseCSV(e.target.result);
+      if (!parsed.length) { toon('Geen geldige adressen gevonden', true); return; }
+      state.adressen = parsed;
+      state.gpsActief = false;
+      try { localStorage.removeItem('kb_voortgang'); slaRouteOp(); } catch(e2) {}
+      document.getElementById('gpsBtn').classList.remove('active');
+      const wd = parsed.filter(a => a.dag==='weekdag').length;
+      const we = parsed.filter(a => a.dag==='weekend').length;
+      render();
+      switchTab('route');
+      toon(`✓ ${parsed.length} adressen geladen (${wd} weekdag, ${we} weekend)`);
+    } catch(err) { toon('Fout: ' + err.message, true); }
+    event.target.value = '';
+  };
+  reader.onerror = () => toon('Bestand kon niet worden gelezen', true);
+  reader.readAsText(bestand, 'UTF-8');
+}
+
+function exportCSV() {
+  const regels = ['nr;straat;kranten;dag;lat;lng'];
+  state.adressen.forEach(a => {
+    regels.push(`${a.nr};${a.straat};${a.kranten.join(' ')};${a.dag};${a.lat??''};${a.lng??''}`);
+  });
+  const csv = regels.join('\n');
+  const uitvoer = document.getElementById('exportOutput');
+  navigator.clipboard.writeText(csv).then(() => {
+    toon('✓ Route naar klembord gekopieerd');
+    uitvoer.style.display = 'none';
+  }).catch(() => {
+    uitvoer.value = csv; uitvoer.style.display = 'block'; uitvoer.select();
+    toon('Selecteer de tekst en kopieer handmatig');
+  });
+}
+
+function deelApp() {
+  navigator.clipboard.writeText(window.location.href)
+    .then(() => toon('✓ App-link gekopieerd'))
+    .catch(() => toon(window.location.href));
+}
+
+// ── Kompas & weer helpers ──────────────────────────────────────────────────────
+function kompas16(deg) {
+  if (deg == null) return null;
+  const r = ['N','NNO','NO','ONO','O','OZO','ZO','ZZO','Z','ZZW','ZW','WZW','W','WNW','NW','NNW'];
+  return r[Math.round((deg % 360) / 22.5) % 16];
+}
+function kompasArrow(deg) {
+  if (deg == null) return '';
+  const p = ['↑','↗','→','↘','↓','↙','←','↖'];
+  return p[Math.round((deg % 360) / 45) % 8];
+}
+function fmtGraad(val, pos, neg) {
+  return `${Math.abs(val).toFixed(5)}°${val >= 0 ? pos : neg}`;
+}
+
+async function fetchWeer(lat, lng) {
+  try {
+    const nu = Date.now();
+    if (state.weerData && (nu - state.weerTijd) < 5 * 60 * 1000) return; // 5-min cache
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,precipitation&wind_speed_unit=kmh&timezone=auto`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+    state.weerData = data.current;
+    state.weerTijd = nu;
+    renderWxStrip();
+  } catch(e) {}
+}
+
+function renderWxStrip() {
+  const el = document.getElementById('wxStrip');
+  const items = [];
+
+  const wx = state.weerData;
+  if (wx) {
+    const t  = Math.round(wx.temperature_2m);
+    const gv = Math.round(wx.apparent_temperature);
+    items.push(`<span class="wx-item">🌡 <b>${t}°C</b></span>`);
+    if (Math.abs(t - gv) >= 2) {
+      items.push(`<span class="wx-item"><span class="lbl">gv</span> <b>${gv}°C</b></span>`);
+    }
+    if (wx.precipitation > 0) {
+      items.push(`<span class="wx-item">🌧 <b>${wx.precipitation.toFixed(1)} mm</b></span>`);
+    } else {
+      items.push(`<span class="wx-item lbl">droog</span>`);
+    }
+    const wDir = kompas16(wx.wind_direction_10m);
+    const wPijl = kompasArrow(wx.wind_direction_10m);
+    const wSpd  = Math.round(wx.wind_speed_10m);
+    items.push(`<span class="wx-item">💨 <b>${wSpd}</b> km/h <span class="wx-pijl">${wPijl}</span>${wDir}</span>`);
+  }
+
+  const pos = state.posLive;
+  if (pos) {
+    if (items.length) items.push('<span class="wx-div"></span>');
+    const snelheid = (pos.speed != null && pos.speed >= 0) ? Math.round(pos.speed * 3.6) : null;
+    const richting = kompas16(pos.heading);
+    const pijl     = kompasArrow(pos.heading);
+    const hoogte   = (pos.altitude != null) ? Math.round(pos.altitude) : null;
+    if (snelheid != null) items.push(`<span class="wx-item">⊙ <b>${snelheid} km/h</b></span>`);
+    if (richting)         items.push(`<span class="wx-item"><span class="wx-pijl">${pijl}</span><b>${richting}</b></span>`);
+    if (hoogte != null)   items.push(`<span class="wx-item">↕ <b>${hoogte} m</b></span>`);
+  }
+
+  if (items.length) {
+    el.innerHTML = items.join('');
+    el.classList.add('toon');
+  } else {
+    el.innerHTML = '';
+    el.classList.remove('toon');
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const huidig = adressenInModus(state.modus);
+  const t = totalen(huidig);
+  const totaalAdr = huidig.length;
+  const bezorgdAant = huidig.filter(a => a.bezorgd).length;
+  const rest = totaalAdr - bezorgdAant;
+  const pct = totaalAdr ? (bezorgdAant / totaalAdr * 100) : 0;
+
+  document.getElementById('progressBar').style.width = pct + '%';
+
+  // Krant chips
+  document.getElementById('krantSummary').innerHTML = Object.entries(KRANTEN).map(([code, info]) => {
+    const { resterend, totaal } = t[code];
+    if (!totaal) return '';
+    return `<div class="krant-chip${resterend===0?' all-done':''}">
+      <div class="krant-dot" style="background:${info.kleur}"></div>
+      <span class="krant-code">${code}</span>
+      <span class="krant-count">${resterend}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('routeStat').innerHTML = `<strong>${rest}</strong>&nbsp;/ ${totaalAdr}`;
+
+  // Modus tabs
+  const wdAant = state.adressen.filter(a => a.dag==='weekdag').length;
+  const weAant = state.adressen.length; // weekend toont alles
+  document.getElementById('wdCount').textContent = ` ${wdAant}`;
+  document.getElementById('weCount').textContent = ` ${weAant}`;
+
+  const wdBtn = document.getElementById('modusWD');
+  const weBtn = document.getElementById('modusWE');
+  wdBtn.classList.toggle('active', state.modus === 'weekdag');
+  weBtn.classList.toggle('active', state.modus === 'weekend');
+
+  // Auto-detectie indicator
+  const autoModus = isWeekend() ? 'weekend' : 'weekdag';
+  if (!state.modusHandmatig) {
+    const activeBtn = state.modus === 'weekdag' ? wdBtn : weBtn;
+    if (!activeBtn.querySelector('.auto-dot')) {
+      const dot = document.createElement('span');
+      dot.className = 'auto-dot';
+      activeBtn.appendChild(dot);
+    }
+  } else {
+    document.querySelectorAll('.auto-dot').forEach(d => d.remove());
+  }
+
+  // Address list
+  const listEl    = document.getElementById('addressList');
+  const allDoneEl = document.getElementById('allDoneMsg');
+  const alleKlaar = rest === 0;
+  const toonWEBadge = state.modus === 'weekend';
+
+  if (alleKlaar && state.verbergBezorgd) {
+    listEl.innerHTML = '';
+    allDoneEl.classList.add('show');
+  } else {
+    allDoneEl.classList.remove('show');
+
+    const geefRij = a => {
+      const isWE = a.dag === 'weekend';
+      const badges = a.kranten.map(k =>
+        `<span class="badge" style="background:${KRANTEN[k]?.kleur||'#888'}">${KRANTEN[k]?.badge||k}</span>`
+      ).join('');
+      const weBadge = toonWEBadge && isWE ? `<span class="we-badge">WE</span>` : '';
+      const dist = state.gpsActief && a.afstand != null
+        ? `<span class="dist-label">${fmtAfstand(a.afstand)}</span>` : '';
+      const coords = (a.lat != null && a.lng != null)
+        ? `<div class="addr-coords">${fmtGraad(a.lat,'N','Z')}&nbsp;&nbsp;${fmtGraad(a.lng,'O','W')}</div>`
+        : '';
+      return `<div class="addr-row${a.bezorgd?' bezorgd':''}${toonWEBadge&&isWE?' is-weekend':''}" onclick="toggleBezorgd(${a.id})">
+        <div class="check-box">${a.bezorgd ? '✓' : ''}</div>
+        <div class="addr-body">
+          <div class="addr-line1">
+            <span class="house-nr">${a.nr}</span>
+            <span class="street">${a.straat}</span>
+          </div>
+          <div class="badge-row">${badges}${weBadge}</div>
+          ${coords}
+        </div>${dist}
+      </div>`;
+    };
+
+    const actief = huidig.filter(a => !a.bezorgd);
+    const klaar  = huidig.filter(a =>  a.bezorgd);
+
+    let html = '';
+    if (!state.verbergBezorgd) {
+      const volgorde = state.gpsActief
+        ? [...huidig].sort((a,b) => { if (a.bezorgd!==b.bezorgd) return a.bezorgd?1:-1; return (a.afstand??9e9)-(b.afstand??9e9); })
+        : huidig;
+      html = volgorde.map(geefRij).join('');
+    } else {
+      const sorted = state.gpsActief
+        ? [...actief].sort((a,b) => (a.afstand??9e9)-(b.afstand??9e9))
+        : actief;
+      html = sorted.map(geefRij).join('');
+      if (klaar.length) {
+        html += `<div class="section-label">Bezorgd (${klaar.length})</div>`;
+        html += klaar.map(geefRij).join('');
+      }
+    }
+    listEl.innerHTML = html;
+  }
+
+  // Invoer
+  document.getElementById('invoerRows').innerHTML = Object.entries(KRANTEN).map(([code, info]) => {
+    const ref = t[code].totaal;
+    if (!ref) return '';
+    let opg = '';
+    try { opg = JSON.parse(localStorage.getItem('kb_invoer')||'{}')[code]||''; } catch(e) {}
+    return `<div class="invoer-row">
+      <span class="invoer-badge" style="background:${info.kleur}">${code}</span>
+      <span class="invoer-name">${info.naam}</span>
+      <span class="invoer-ref">${ref}×</span>
+      <input class="invoer-input" type="number" min="0" max="999" id="inv_${code}" value="${opg}" placeholder="${ref}">
+    </div>`;
+  }).join('');
+
+  // Instellingen info
+  const wdAll = state.adressen.filter(a => a.dag==='weekdag').length;
+  const weAll = state.adressen.filter(a => a.dag==='weekend').length;
+  const metGPS = state.adressen.filter(a => a.lat!=null).length;
+  const el = id => document.getElementById(id);
+  if (el('infoWD')) {
+    el('infoWD').textContent = wdAll;
+    el('infoWE').textContent = weAll;
+    el('infoBez').textContent = `${state.adressen.filter(a=>a.bezorgd).length} / ${state.adressen.length}`;
+    el('infoGPS').textContent = metGPS === state.adressen.length ? 'Ja' : metGPS > 0 ? `${metGPS} / ${state.adressen.length}` : 'Nee';
+  }
+}
+
+// ── Acties ────────────────────────────────────────────────────────────────────
+function toggleBezorgd(id) {
+  const a = state.adressen.find(x => x.id === id);
+  if (a) { a.bezorgd = !a.bezorgd; slaVoortgangOp(); render(); }
+}
+
+function setModus(modus) {
+  state.modus = modus;
+  state.modusHandmatig = true;
+  try { localStorage.setItem('kb_modus', modus); } catch(e) {}
+  render();
+}
+
+function toggleHide() {
+  state.verbergBezorgd = !state.verbergBezorgd;
+  document.getElementById('hideBtn').classList.toggle('active', state.verbergBezorgd);
+  render();
+}
+
+function requestGPS() {
+  if (!navigator.geolocation) { toon('GPS niet beschikbaar', true); return; }
+  if (!state.adressen.some(a => a.lat != null)) {
+    toon('Voeg lat/lng toe aan de CSV voor GPS-sortering', true); return;
+  }
+  const btn = document.getElementById('gpsBtn');
+  btn.style.opacity = '.5';
+
+  // Stop eventuele vorige watch
+  if (state.gpsWatch != null) {
+    navigator.geolocation.clearWatch(state.gpsWatch);
+    state.gpsWatch = null;
+  }
+
+  let eerste = true;
+
+  state.gpsWatch = navigator.geolocation.watchPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    state.posLive = pos.coords;
+
+    // Afstanden bijwerken
+    state.adressen.forEach(a => {
+      a.afstand = (a.lat!=null && a.lng!=null) ? berekenAfstand(lat, lng, a.lat, a.lng) : null;
+    });
+
+    if (eerste) {
+      eerste = false;
+      state.gpsActief = true;
+      btn.style.opacity = '';
+      btn.classList.add('active');
+      render();
+      toon('Gesorteerd op afstand');
+      fetchWeer(lat, lng); // eerste weerfetch
+    } else {
+      renderWxStrip();     // alleen strip bijwerken, geen volledige re-render
+      fetchWeer(lat, lng); // iedere 5 min automatisch vernieuwd via cache
+    }
+  }, () => {
+    btn.style.opacity = '';
+    toon('GPS toegang geweigerd', true);
+  }, { enableHighAccuracy: true, timeout: 15000 });
+}
+
+async function toggleWakeLock() {
+  const btn = document.getElementById('wakeLockBtn');
+  if (state.wakeLock) {
+    state.wakeLock.release(); state.wakeLock = null; btn.classList.remove('active');
+  } else {
+    try {
+      state.wakeLock = await navigator.wakeLock.request('screen');
+      btn.classList.add('active');
+      state.wakeLock.addEventListener('release', () => { state.wakeLock = null; btn.classList.remove('active'); });
+    } catch(e) { toon('Wake Lock niet beschikbaar', true); }
+  }
+}
+
+function toggleTheme() {
+  const themas = [null, 'dark', 'light'];
+  state.thema = themas[(themas.indexOf(state.thema)+1) % themas.length];
+  const root = document.documentElement;
+  if (state.thema) { root.setAttribute('data-theme', state.thema); try { localStorage.setItem('kb_thema', state.thema); } catch(e) {} }
+  else { root.removeAttribute('data-theme'); try { localStorage.removeItem('kb_thema'); } catch(e) {} }
+}
+
+function resetRoute() {
+  if (!confirm('Ronde resetten? Alle vinkjes worden gewist.')) return;
+  state.adressen.forEach(a => { a.bezorgd = false; a.afstand = null; });
+  state.gpsActief = false;
+  state.verbergBezorgd = false;
+  // Modus terug naar auto
+  state.modus = isWeekend() ? 'weekend' : 'weekdag';
+  state.modusHandmatig = false;
+  try { localStorage.removeItem('kb_voortgang'); localStorage.removeItem('kb_modus'); } catch(e) {}
+  document.getElementById('gpsBtn').classList.remove('active');
+  document.getElementById('hideBtn').classList.remove('active');
+  render();
+  switchTab('route');
+}
+
+function saveInvoer() {
+  const data = {};
+  Object.keys(KRANTEN).forEach(k => { const el = document.getElementById('inv_'+k); if (el) data[k] = el.value; });
+  try { localStorage.setItem('kb_invoer', JSON.stringify(data)); } catch(e) {}
+  toon('✓ Opgeslagen');
+}
+
+function switchTab(tab) {
+  document.getElementById('routeTab').style.display = tab==='route' ? '' : 'none';
+  document.getElementById('modusRow').style.display  = tab==='route' ? '' : 'none';
+  document.getElementById('invoerScreen').classList.toggle('show', tab==='invoer');
+  document.getElementById('instScreen').classList.toggle('show',   tab==='inst');
+  ['Route','Invoer','Inst'].forEach(t => {
+    document.getElementById('tab'+t).classList.toggle('active', tab===t.toLowerCase());
+  });
+  if (tab !== 'route') render();
+}
+
+let toastTimer;
+function toon(bericht, fout=false) {
+  const el = document.getElementById('toast');
+  el.textContent = bericht;
+  el.className = 'toast show' + (fout ? ' fout' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+function updateClock() {
+  const nu = new Date();
+  document.getElementById('clock').textContent =
+    String(nu.getHours()).padStart(2,'0') + ':' + String(nu.getMinutes()).padStart(2,'0');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+updateClock();
+setInterval(updateClock, 15000);
+render();
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && !state.wakeLock) {
+    const btn = document.getElementById('wakeLockBtn');
+    if (btn.classList.contains('active')) {
+      try { state.wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+    }
+  }
+});
+</script>
