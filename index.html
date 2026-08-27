@@ -307,6 +307,111 @@ body {
 
 .dist-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); flex-shrink: 0; text-align: right; min-width: 38px; font-variant-numeric: tabular-nums; }
 
+/* ── Filter bar ── */
+.filter-bar {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-faint);
+  padding: 0 16px;
+}
+.filter-tab {
+  flex: 1; padding: 8px 4px;
+  font-family: var(--font-sans); font-size: 12px; font-weight: 500;
+  color: var(--text-2); background: none; border: none;
+  border-bottom: 2px solid transparent; cursor: pointer;
+  transition: color .15s, border-color .15s; white-space: nowrap;
+}
+.filter-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.ft-count { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); margin-left: 3px; }
+.filter-tab.active .ft-count { color: var(--accent); opacity: .7; }
+
+/* ── Bewerk-modus: sleepgreep + verwijderknop ── */
+.drag-handle {
+  display: none; color: var(--text-3); font-size: 16px; letter-spacing: 1px;
+  padding: 4px 6px; cursor: grab; touch-action: none; flex-shrink: 0;
+  align-items: center; user-select: none;
+}
+.bewerk-actief .drag-handle { display: flex; }
+.del-btn {
+  display: none; width: 28px; height: 28px; border-radius: 7px;
+  border: 1px solid var(--danger); background: var(--danger-dim);
+  color: var(--danger); font-size: 18px; line-height: 1;
+  align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.bewerk-actief .del-btn { display: flex; }
+.addr-row.is-dragging { opacity: 0.3; }
+.addr-row.drag-over-before { border-top: 2px solid var(--accent) !important; }
+.addr-row.drag-over-after  { border-bottom: 2px solid var(--accent) !important; }
+
+/* ── Adres toevoegen knop ── */
+.add-adres-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 12px 16px 80px; padding: 13px;
+  border: 1.5px dashed var(--border); border-radius: 12px;
+  background: none; color: var(--text-3);
+  font-family: var(--font-sans); font-size: 13px;
+  cursor: pointer; transition: border-color .15s, color .15s; width: calc(100% - 32px);
+}
+.add-adres-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  z-index: 100; display: flex; align-items: flex-end;
+}
+.modal-sheet {
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  padding: 20px 20px 36px; width: 100%;
+  max-height: 90vh; overflow-y: auto;
+  border-top: 1px solid var(--border);
+}
+.modal-title {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  color: var(--text-1); margin-bottom: 20px; text-align: center;
+}
+.modal-field { margin-bottom: 14px; }
+.modal-label {
+  display: block; font-family: var(--font-mono); font-size: 10px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: .09em;
+  color: var(--text-3); margin-bottom: 6px;
+}
+.modal-input {
+  display: block; width: 100%;
+  background: var(--surface-raised); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 13px;
+  font-family: var(--font-sans); font-size: 15px; color: var(--text-1);
+  outline: none; transition: border-color .15s;
+}
+.modal-input:focus { border-color: var(--accent); }
+.krant-check-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.krant-check-label {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface-raised);
+  cursor: pointer; font-size: 13px; color: var(--text-2);
+  transition: border-color .15s, background .15s;
+}
+.krant-check-label.aan { border-color: var(--accent); background: var(--accent-dim); color: var(--text-1); }
+.dag-row { display: flex; gap: 8px; }
+.dag-btn {
+  flex: 1; padding: 9px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--surface-raised); color: var(--text-2);
+  font-size: 13px; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.dag-btn.aan { border-color: var(--accent); background: var(--accent-dim); color: var(--text-1); }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-save {
+  flex: 1; padding: 13px; background: var(--accent); color: #fff;
+  border: none; border-radius: 12px;
+  font-family: var(--font-sans); font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.modal-cancel {
+  padding: 13px 18px; background: var(--surface-raised); color: var(--text-2);
+  border: 1px solid var(--border); border-radius: 12px;
+  font-family: var(--font-sans); font-size: 14px; cursor: pointer;
+}
+
 /* ── All done ── */
 .all-done-msg { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 56px 32px; text-align: center; gap: 14px; }
 .all-done-msg.show { display: flex; }
@@ -427,11 +532,18 @@ body {
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg>
       GPS
     </button>
-    <button class="ctrl-btn" id="hideBtn" onclick="toggleHide()">
-      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      Verberg bezorgd
+    <button class="ctrl-btn" id="sortBtn" onclick="toggleGpsSort()" style="display:none" title="Sorteer op afstand">
+      ↕ Afstand
+    </button>
+    <button class="ctrl-btn" id="bewerkBtn" onclick="toggleBewerken()" title="Volgorde aanpassen / adressen beheren">
+      ✎ Bewerken
     </button>
     <span class="route-stat" id="routeStat"></span>
+  </div>
+  <div class="filter-bar">
+    <button class="filter-tab active" id="ftTodo" onclick="setFilter('todo')">Te doen <span class="ft-count" id="ftTodoN"></span></button>
+    <button class="filter-tab" id="ftAll"  onclick="setFilter('all')">Alles <span class="ft-count" id="ftAllN"></span></button>
+    <button class="filter-tab" id="ftDone" onclick="setFilter('done')">Gedaan <span class="ft-count" id="ftDoneN"></span></button>
   </div>
   <div class="address-list" id="addressList"></div>
   <div class="all-done-msg" id="allDoneMsg">
@@ -514,6 +626,40 @@ body {
       <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
       Ronde resetten
     </button>
+  </div>
+</div>
+
+<!-- ── Adres toevoegen modal ── -->
+<div class="modal-overlay" id="adresModal" style="display:none">
+  <div class="modal-sheet">
+    <div class="modal-title">Adres toevoegen</div>
+    <div class="modal-field">
+      <label class="modal-label">Huisnummer</label>
+      <input class="modal-input" type="text" id="mNr" inputmode="text" placeholder="3a">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Straatnaam</label>
+      <input class="modal-input" type="text" id="mStraat" placeholder="Dorpsstraat">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Kranten</label>
+      <div class="krant-check-row" id="mKrantenRij"></div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Dag</label>
+      <div class="dag-row">
+        <button class="dag-btn aan" id="mDagWD" onclick="setModalDag('weekdag')">Weekdag</button>
+        <button class="dag-btn"     id="mDagWE" onclick="setModalDag('weekend')">Weekend</button>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label" style="text-transform:none;letter-spacing:0;font-size:11px">Notitie <span style="color:var(--text-3);font-weight:400">(optioneel)</span></label>
+      <input class="modal-input" type="text" id="mNotitie" placeholder="hond, bellen">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-save"   onclick="voegAdresToe()">Toevoegen</button>
+      <button class="modal-cancel" onclick="sluitAdresModal()">Annuleer</button>
+    </div>
   </div>
 </div>
 
@@ -615,11 +761,13 @@ function totalen(adressenlijst) {
 
 // ── State ────────────────────────────────────────────────────────────────────
 let state = {
-  adressen: VOORBEELD.map((a, i) => ({ ...a, id: i+1, bezorgd: false, afstand: null })),
+  adressen: VOORBEELD.map((a, i) => ({ ...a, id: i+1, bezorgd: false, afstand: null, notitie: a.notitie||'' })),
   modus: isWeekend() ? 'weekend' : 'weekdag',
   modusHandmatig: false,
-  verbergBezorgd: false,
+  filter: 'todo',      // 'todo' | 'all' | 'done'
   gpsActief: false,
+  gpsSort: false,
+  bewerken: false,
   gpsWatch: null,
   posLive: null,
   weerData: null,
@@ -872,7 +1020,7 @@ function render() {
 
   // Modus tabs
   const wdAant = state.adressen.filter(a => a.dag==='weekdag').length;
-  const weAant = state.adressen.length; // weekend toont alles
+  const weAant = state.adressen.length;
   document.getElementById('wdCount').textContent = ` ${wdAant}`;
   document.getElementById('weCount').textContent = ` ${weAant}`;
 
@@ -881,8 +1029,6 @@ function render() {
   wdBtn.classList.toggle('active', state.modus === 'weekdag');
   weBtn.classList.toggle('active', state.modus === 'weekend');
 
-  // Auto-detectie indicator
-  const autoModus = isWeekend() ? 'weekend' : 'weekdag';
   if (!state.modusHandmatig) {
     const activeBtn = state.modus === 'weekdag' ? wdBtn : weBtn;
     if (!activeBtn.querySelector('.auto-dot')) {
@@ -894,63 +1040,84 @@ function render() {
     document.querySelectorAll('.auto-dot').forEach(d => d.remove());
   }
 
-  // Address list
+  // Filter tabs teller
+  const todoN = huidig.filter(a => !a.bezorgd).length;
+  const doneN = bezorgdAant;
+  document.getElementById('ftTodoN').textContent = todoN;
+  document.getElementById('ftAllN').textContent  = totaalAdr;
+  document.getElementById('ftDoneN').textContent = doneN;
+  ['ftTodo','ftAll','ftDone'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(state.filter==='todo'?'ftTodo':state.filter==='done'?'ftDone':'ftAll').classList.add('active');
+
+  // GPS sort-knop zichtbaarheid
+  const heeftCoords = huidig.some(a => a.lat != null);
+  document.getElementById('sortBtn').style.display = (state.gpsActief && heeftCoords) ? '' : 'none';
+  document.getElementById('sortBtn').classList.toggle('active', state.gpsSort);
+  document.getElementById('bewerkBtn').classList.toggle('active', state.bewerken);
+
+  // Bewerk-modus class op de list (voor CSS drag/del zichtbaarheid)
   const listEl    = document.getElementById('addressList');
   const allDoneEl = document.getElementById('allDoneMsg');
-  const alleKlaar = rest === 0;
+  listEl.classList.toggle('bewerk-actief', state.bewerken);
+
   const toonWEBadge = state.modus === 'weekend';
 
-  if (alleKlaar && state.verbergBezorgd) {
+  const geefRij = a => {
+    const isWE = a.dag === 'weekend';
+    const badges = a.kranten.map(k =>
+      `<span class="badge" style="background:${KRANTEN[k]?.kleur||'#888'}">${KRANTEN[k]?.badge||k}</span>`
+    ).join('');
+    const weBadge = toonWEBadge && isWE ? `<span class="we-badge">WE</span>` : '';
+    const dist = state.gpsActief && state.gpsSort && a.afstand != null
+      ? `<span class="dist-label">${fmtAfstand(a.afstand)}</span>` : '';
+    const coords = (a.lat != null && a.lng != null)
+      ? `<div class="addr-coords">${fmtGraad(a.lat,'N','Z')}&nbsp;&nbsp;${fmtGraad(a.lng,'O','W')}</div>`
+      : '';
+    const notitie = a.notitie
+      ? `<div class="addr-note"><span class="addr-note-icon">⚑</span>${a.notitie}</div>`
+      : '';
+    return `<div class="addr-row${a.bezorgd?' bezorgd':''}${toonWEBadge&&isWE?' is-weekend':''}" data-id="${a.id}" onclick="rijKlik(event,${a.id})">
+      <div class="drag-handle" ontouchstart="startDrag(event,${a.id})">⋮⋮</div>
+      <div class="check-box">${a.bezorgd ? '✓' : ''}</div>
+      <div class="addr-body">
+        <div class="addr-line1">
+          <span class="house-nr">${a.nr}</span>
+          <span class="street">${a.straat}</span>
+        </div>
+        <div class="badge-row">${badges}${weBadge}</div>
+        ${notitie}${coords}
+      </div>${dist}
+      <button class="del-btn" onclick="verwijderAdres(${a.id},event)">×</button>
+    </div>`;
+  };
+
+  // Filter + optionele GPS-sortering
+  const todoLijst = huidig.filter(a => !a.bezorgd);
+  const doneLijst = huidig.filter(a =>  a.bezorgd);
+  const sorteerOp = arr => (state.gpsSort && state.gpsActief)
+    ? [...arr].sort((a,b) => (a.afstand??9e9)-(b.afstand??9e9))
+    : arr;
+
+  // All-done bericht alleen in "Te doen" als er niets meer te doen is
+  if (state.filter === 'todo' && rest === 0 && totaalAdr > 0) {
     listEl.innerHTML = '';
     allDoneEl.classList.add('show');
   } else {
     allDoneEl.classList.remove('show');
-
-    const geefRij = a => {
-      const isWE = a.dag === 'weekend';
-      const badges = a.kranten.map(k =>
-        `<span class="badge" style="background:${KRANTEN[k]?.kleur||'#888'}">${KRANTEN[k]?.badge||k}</span>`
-      ).join('');
-      const weBadge = toonWEBadge && isWE ? `<span class="we-badge">WE</span>` : '';
-      const dist = state.gpsActief && a.afstand != null
-        ? `<span class="dist-label">${fmtAfstand(a.afstand)}</span>` : '';
-      const coords = (a.lat != null && a.lng != null)
-        ? `<div class="addr-coords">${fmtGraad(a.lat,'N','Z')}&nbsp;&nbsp;${fmtGraad(a.lng,'O','W')}</div>`
-        : '';
-      const notitie = a.notitie
-        ? `<div class="addr-note"><span class="addr-note-icon">⚑</span>${a.notitie}</div>`
-        : '';
-      return `<div class="addr-row${a.bezorgd?' bezorgd':''}${toonWEBadge&&isWE?' is-weekend':''}" onclick="toggleBezorgd(${a.id})">
-        <div class="check-box">${a.bezorgd ? '✓' : ''}</div>
-        <div class="addr-body">
-          <div class="addr-line1">
-            <span class="house-nr">${a.nr}</span>
-            <span class="street">${a.straat}</span>
-          </div>
-          <div class="badge-row">${badges}${weBadge}</div>
-          ${notitie}${coords}
-        </div>${dist}
-      </div>`;
-    };
-
-    const actief = huidig.filter(a => !a.bezorgd);
-    const klaar  = huidig.filter(a =>  a.bezorgd);
-
     let html = '';
-    if (!state.verbergBezorgd) {
-      const volgorde = state.gpsActief
-        ? [...huidig].sort((a,b) => { if (a.bezorgd!==b.bezorgd) return a.bezorgd?1:-1; return (a.afstand??9e9)-(b.afstand??9e9); })
-        : huidig;
-      html = volgorde.map(geefRij).join('');
-    } else {
-      const sorted = state.gpsActief
-        ? [...actief].sort((a,b) => (a.afstand??9e9)-(b.afstand??9e9))
-        : actief;
-      html = sorted.map(geefRij).join('');
-      if (klaar.length) {
-        html += `<div class="section-label">Bezorgd (${klaar.length})</div>`;
-        html += klaar.map(geefRij).join('');
+    if (state.filter === 'todo') {
+      html = sorteerOp(todoLijst).map(geefRij).join('');
+    } else if (state.filter === 'done') {
+      html = doneLijst.map(geefRij).join('');
+    } else { // 'all'
+      html = sorteerOp(todoLijst).map(geefRij).join('');
+      if (doneLijst.length) {
+        html += `<div class="section-label">Bezorgd (${doneLijst.length})</div>`;
+        html += doneLijst.map(geefRij).join('');
       }
+    }
+    if (state.bewerken) {
+      html += `<button class="add-adres-btn" onclick="toonAdresModal()">＋ Adres toevoegen</button>`;
     }
     listEl.innerHTML = html;
   }
@@ -995,24 +1162,157 @@ function setModus(modus) {
   render();
 }
 
-function toggleHide() {
-  state.verbergBezorgd = !state.verbergBezorgd;
-  document.getElementById('hideBtn').classList.toggle('active', state.verbergBezorgd);
+function setFilter(f) {
+  state.filter = f;
   render();
+}
+
+function toggleGpsSort() {
+  state.gpsSort = !state.gpsSort;
+  render();
+  toon(state.gpsSort ? 'Gesorteerd op afstand' : 'Vaste volgorde hersteld');
+}
+
+function toggleBewerken() {
+  state.bewerken = !state.bewerken;
+  render();
+}
+
+function rijKlik(event, id) {
+  if (state.bewerken) return; // geen bezorging-toggle in bewerkmodus
+  toggleBezorgd(id);
+}
+
+function verwijderAdres(id, event) {
+  event.stopPropagation();
+  state.adressen = state.adressen.filter(a => a.id !== id);
+  slaRouteOp();
+  render();
+}
+
+// ── Drag-to-reorder (touch) ──────────────────────────────────────────────────
+let _drag = null;
+
+function startDrag(e, id) {
+  if (!state.bewerken) return;
+  e.preventDefault();
+  e.stopPropagation();
+  _drag = { id, overRow: null };
+  document.querySelector(`.addr-row[data-id="${id}"]`)?.classList.add('is-dragging');
+}
+
+document.addEventListener('touchmove', e => {
+  if (!_drag) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const targetRow = el?.closest('.addr-row[data-id]');
+  document.querySelectorAll('.drag-over-before,.drag-over-after').forEach(r => {
+    r.classList.remove('drag-over-before','drag-over-after');
+  });
+  if (targetRow) {
+    const targetId = parseInt(targetRow.dataset.id);
+    if (targetId !== _drag.id) {
+      const rect = targetRow.getBoundingClientRect();
+      const isBefore = touch.clientY < rect.top + rect.height / 2;
+      targetRow.classList.add(isBefore ? 'drag-over-before' : 'drag-over-after');
+      _drag.overRow = { id: targetId, before: isBefore };
+    }
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+  if (!_drag) return;
+  document.querySelectorAll('.is-dragging,.drag-over-before,.drag-over-after').forEach(r => {
+    r.classList.remove('is-dragging','drag-over-before','drag-over-after');
+  });
+  if (_drag.overRow) {
+    const fromIdx = state.adressen.findIndex(a => a.id === _drag.id);
+    const toIdx   = state.adressen.findIndex(a => a.id === _drag.overRow.id);
+    if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
+      const [item] = state.adressen.splice(fromIdx, 1);
+      const newTo  = state.adressen.findIndex(a => a.id === _drag.overRow.id);
+      state.adressen.splice(_drag.overRow.before ? newTo : newTo + 1, 0, item);
+      slaRouteOp();
+    }
+  }
+  _drag = null;
+  render();
+});
+
+// ── Adres toevoegen modal ────────────────────────────────────────────────────
+let _modalDag = 'weekdag';
+
+function toonAdresModal() {
+  _modalDag = state.modus === 'weekend' ? 'weekend' : 'weekdag';
+  document.getElementById('mNr').value = '';
+  document.getElementById('mStraat').value = '';
+  document.getElementById('mNotitie').value = '';
+  document.getElementById('mKrantenRij').innerHTML = Object.entries(KRANTEN).map(([code, info]) =>
+    `<label class="krant-check-label" id="mcl_${code}" onclick="toggleKrantCheck('${code}')">
+      <span class="badge" style="background:${info.kleur}">${code}</span>
+      <span>${info.naam}</span>
+    </label>`
+  ).join('');
+  setModalDag(_modalDag);
+  document.getElementById('adresModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('mNr').focus(), 100);
+}
+
+function sluitAdresModal() {
+  document.getElementById('adresModal').style.display = 'none';
+}
+
+function setModalDag(dag) {
+  _modalDag = dag;
+  document.getElementById('mDagWD').classList.toggle('aan', dag === 'weekdag');
+  document.getElementById('mDagWE').classList.toggle('aan', dag === 'weekend');
+}
+
+function toggleKrantCheck(code) {
+  document.getElementById('mcl_' + code).classList.toggle('aan');
+}
+
+function voegAdresToe() {
+  const nr     = document.getElementById('mNr').value.trim();
+  const straat = document.getElementById('mStraat').value.trim();
+  const kranten = Object.keys(KRANTEN).filter(k =>
+    document.getElementById('mcl_' + k)?.classList.contains('aan')
+  );
+  const notitie = document.getElementById('mNotitie').value.trim();
+  if (!nr || !straat) { toon('Vul huisnummer en straat in', true); return; }
+  if (!kranten.length) { toon('Selecteer minimaal één krant', true); return; }
+  const maxId = state.adressen.reduce((m, a) => Math.max(m, a.id), 0);
+  state.adressen.push({
+    id: maxId + 1, nr, straat, dag: _modalDag,
+    kranten, notitie, lat: null, lng: null,
+    bezorgd: false, afstand: null,
+  });
+  slaRouteOp();
+  sluitAdresModal();
+  render();
+  toon(`${nr} ${straat} toegevoegd`);
 }
 
 function requestGPS() {
   if (!navigator.geolocation) { toon('GPS niet beschikbaar', true); return; }
 
   const btn = document.getElementById('gpsBtn');
+
+  // Toggle: GPS uitzetten als al actief
+  if (state.gpsActief) {
+    if (state.gpsWatch != null) { navigator.geolocation.clearWatch(state.gpsWatch); state.gpsWatch = null; }
+    state.gpsActief = false;
+    state.gpsSort   = false;
+    state.posLive   = null;
+    btn.classList.remove('active');
+    render();
+    toon('GPS uitgeschakeld');
+    return;
+  }
+
   btn.style.opacity = '.5';
   const heeftRouteCoords = state.adressen.some(a => a.lat != null);
-
-  // Stop eventuele vorige watch
-  if (state.gpsWatch != null) {
-    navigator.geolocation.clearWatch(state.gpsWatch);
-    state.gpsWatch = null;
-  }
 
   let eerste = true;
 
@@ -1033,12 +1333,11 @@ function requestGPS() {
       btn.classList.add('active');
       fetchWeer(lat, lng);
 
+      state.gpsActief = true;
+      render();
       if (heeftRouteCoords) {
-        state.gpsActief = true;
-        render();
-        toon('Gesorteerd op afstand');
+        toon('GPS actief — gebruik ↕ Afstand om te sorteren');
       } else {
-        renderWxStrip();
         toon('GPS actief — weer & positie geladen');
       }
     } else {
@@ -1076,13 +1375,13 @@ function resetRoute() {
   if (!confirm('Ronde resetten? Alle vinkjes worden gewist.')) return;
   state.adressen.forEach(a => { a.bezorgd = false; a.afstand = null; });
   state.gpsActief = false;
-  state.verbergBezorgd = false;
-  // Modus terug naar auto
+  state.gpsSort   = false;
+  state.filter    = 'todo';
+  state.bewerken  = false;
   state.modus = isWeekend() ? 'weekend' : 'weekdag';
   state.modusHandmatig = false;
   try { localStorage.removeItem('kb_voortgang'); localStorage.removeItem('kb_modus'); } catch(e) {}
   document.getElementById('gpsBtn').classList.remove('active');
-  document.getElementById('hideBtn').classList.remove('active');
   render();
   switchTab('route');
 }
