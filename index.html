@@ -1335,6 +1335,7 @@ function requestGPS() {
 
       state.gpsActief = true;
       render();
+      renderWxStrip();
       if (heeftRouteCoords) {
         toon('GPS actief — gebruik ↕ Afstand om te sorteren');
       } else {
