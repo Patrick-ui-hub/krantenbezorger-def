@@ -4,7 +4,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 
 <style>
 :root {
@@ -22,8 +22,8 @@
   --ok-dim:         rgba(71,168,118,.12);
   --danger:         #e05050;
   --danger-dim:     rgba(224,80,80,.12);
-  --font-sans:      'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono:      'IBM Plex Mono', monospace;
+  --font-sans:      'Figtree', system-ui, sans-serif;
+  --font-mono:      'JetBrains Mono', monospace;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
@@ -90,7 +90,19 @@ body {
   gap: 7px;
 }
 .header-right { display: flex; align-items: center; gap: 7px; }
-.clock { font-family: var(--font-mono); font-size: 13px; color: var(--text-2); }
+.countdown {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  color: var(--text-2); letter-spacing: .03em;
+  font-variant-numeric: tabular-nums;
+  transition: color .4s;
+}
+.countdown.ok   { color: var(--ok); }
+.countdown.druk { color: var(--accent); }
+.countdown.laat { color: var(--danger); animation: knipperRood 1s step-end infinite; }
+@keyframes knipperRood {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .45; }
+}
 .icon-btn {
   background: none;
   border: 1px solid var(--border);
@@ -245,11 +257,11 @@ body {
 .addr-row.bezorgd.is-weekend { border-left-color: var(--ok); }
 
 .check-box {
-  width: 26px; height: 26px; border-radius: 7px;
-  border: 1.5px solid var(--border); background: transparent;
+  width: 32px; height: 32px; border-radius: 9px;
+  border: 2px solid var(--border); background: transparent;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; transition: background .15s, border-color .15s;
-  color: transparent; font-size: 13px; font-weight: 700;
+  color: transparent; font-size: 16px; font-weight: 700;
 }
 .addr-row.bezorgd .check-box { background: var(--ok); border-color: var(--ok); color: #fff; }
 
@@ -276,19 +288,19 @@ body {
 /* ── Weer & GPS strip ── */
 .wx-strip {
   display: none; align-items: center; gap: 0;
-  padding: 6px 0 2px; overflow-x: auto; scrollbar-width: none;
+  padding: 7px 0 3px; overflow-x: auto; scrollbar-width: none;
 }
 .wx-strip.toon { display: flex; }
 .wx-strip::-webkit-scrollbar { display: none; }
 .wx-item {
-  font-family: var(--font-mono); font-size: 10px; color: var(--text-2);
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-2);
   white-space: nowrap; font-variant-numeric: tabular-nums;
-  padding-right: 10px;
+  padding-right: 12px; line-height: 1.3;
 }
-.wx-item b { color: var(--text-1); font-weight: 600; }
-.wx-item .lbl { color: var(--text-3); font-size: 9px; }
-.wx-pijl { display: inline-block; font-size: 10px; margin-right: 1px; }
-.wx-div { width: 1px; height: 10px; background: var(--border); flex-shrink: 0; margin: 0 4px 0 0; align-self: center; }
+.wx-item b { color: var(--accent); font-weight: 600; font-size: 14px; }
+.wx-item .lbl { color: var(--text-3); font-size: 11px; }
+.wx-pijl { display: inline-block; font-size: 13px; margin-right: 2px; }
+.wx-div { width: 1px; height: 13px; background: var(--border); flex-shrink: 0; margin: 0 6px 0 0; align-self: center; }
 
 /* ── Adres coördinaten ── */
 .addr-coords {
@@ -505,7 +517,7 @@ body {
   <div class="header-top">
     <div class="app-name"><span>📰</span>Krantenbezorger</div>
     <div class="header-right">
-      <span class="clock" id="clock"></span>
+      <span class="countdown" id="clock"></span>
       <button class="icon-btn" id="wakeLockBtn" title="Scherm aan houden" onclick="toggleWakeLock()">☀</button>
       <button class="icon-btn" title="Thema wisselen" onclick="toggleTheme()">◑</button>
     </div>
@@ -774,6 +786,7 @@ let state = {
   weerTijd: 0,
   wakeLock: null,
   thema: null,
+  timerDeadline: null,
 };
 
 // ── Opgeslagen data herstellen ────────────────────────────────────────────────
@@ -980,9 +993,15 @@ function renderWxStrip() {
     const richting = kompas16(pos.heading);
     const pijl     = kompasArrow(pos.heading);
     const hoogte   = (pos.altitude != null) ? Math.round(pos.altitude) : null;
-    if (snelheid != null) items.push(`<span class="wx-item">⊙ <b>${snelheid} km/h</b></span>`);
-    if (richting)         items.push(`<span class="wx-item"><span class="wx-pijl">${pijl}</span><b>${richting}</b></span>`);
-    if (hoogte != null)   items.push(`<span class="wx-item">↕ <b>${hoogte} m</b></span>`);
+    let gpsItems = 0;
+    if (snelheid != null) { items.push(`<span class="wx-item">⊙ <b>${snelheid} km/h</b></span>`); gpsItems++; }
+    if (richting)         { items.push(`<span class="wx-item"><span class="wx-pijl">${pijl}</span><b>${richting}</b></span>`); gpsItems++; }
+    if (hoogte != null)   { items.push(`<span class="wx-item">↕ <b>${hoogte} m</b></span>`); gpsItems++; }
+    // Fallback: toon coördinaten als snelheid/richting/hoogte allemaal onbekend zijn
+    if (!gpsItems) {
+      items.push(`<span class="wx-item">📍 <b>${fmtGraad(pos.latitude,'N','Z')}</b></span>`);
+      items.push(`<span class="wx-item"><b>${fmtGraad(pos.longitude,'O','W')}</b></span>`);
+    }
   }
 
   if (items.length) {
@@ -1387,11 +1406,25 @@ function resetRoute() {
   switchTab('route');
 }
 
+function deadlineVandaag() {
+  const nu = new Date();
+  const deadline = new Date(nu.getFullYear(), nu.getMonth(), nu.getDate(),
+    isWeekend() ? 9 : 7, 0, 0, 0);
+  // Als de deadline al voorbij is voor vandaag, stel in op morgen
+  if (deadline <= nu) deadline.setDate(deadline.getDate() + 1);
+  return deadline.getTime();
+}
+
 function saveInvoer() {
   const data = {};
   Object.keys(KRANTEN).forEach(k => { const el = document.getElementById('inv_'+k); if (el) data[k] = el.value; });
   try { localStorage.setItem('kb_invoer', JSON.stringify(data)); } catch(e) {}
-  toon('✓ Opgeslagen');
+  // Start afteltimer
+  const dl = deadlineVandaag();
+  try { localStorage.setItem('kb_timer_dl', dl); } catch(e) {}
+  state.timerDeadline = dl;
+  updateTimer();
+  toon('✓ Opgeslagen — aftellen gestart');
 }
 
 function switchTab(tab) {
@@ -1414,15 +1447,43 @@ function toon(bericht, fout=false) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
 }
 
-function updateClock() {
-  const nu = new Date();
-  document.getElementById('clock').textContent =
-    String(nu.getHours()).padStart(2,'0') + ':' + String(nu.getMinutes()).padStart(2,'0');
+function updateTimer() {
+  const el = document.getElementById('clock');
+  const dl = state.timerDeadline;
+  if (!dl) {
+    // Geen timer actief: toon gewone klok
+    const nu = new Date();
+    el.textContent = String(nu.getHours()).padStart(2,'0') + ':' + String(nu.getMinutes()).padStart(2,'0');
+    el.className = 'countdown';
+    return;
+  }
+  const rest = dl - Date.now();
+  if (rest <= 0) {
+    el.textContent = '⏰ OVER';
+    el.className = 'countdown laat';
+    return;
+  }
+  const totSec = Math.floor(rest / 1000);
+  const uren   = Math.floor(totSec / 3600);
+  const min    = Math.floor((totSec % 3600) / 60);
+  const sec    = totSec % 60;
+  const tekst  = uren > 0
+    ? `${uren}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+    : `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  el.textContent = tekst;
+  // Kleurklasse op basis van resterende tijd
+  const restMin = totSec / 60;
+  el.className = 'countdown ' + (restMin > 60 ? 'ok' : restMin > 15 ? 'druk' : 'laat');
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-updateClock();
-setInterval(updateClock, 15000);
+// Herstel afteltimer uit localStorage (alleen als deadline nog in de toekomst ligt)
+try {
+  const opgeslagenDl = parseInt(localStorage.getItem('kb_timer_dl') || '0', 10);
+  if (opgeslagenDl && opgeslagenDl > Date.now()) state.timerDeadline = opgeslagenDl;
+} catch(e) {}
+updateTimer();
+setInterval(updateTimer, 1000);
 render();
 
 document.addEventListener('visibilitychange', async () => {
