@@ -213,6 +213,9 @@ body {
 }
 .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
 .ctrl-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+/* GPS-knop krijgt een extra visueel "uit"-signaal: subtiele pulse-ring als hij actief is */
+#gpsBtn.active { box-shadow: 0 0 0 2px var(--accent-dim), 0 0 0 4px transparent; }
+#gpsBtn:not(.active) { opacity: .55; }
 .ctrl-btn svg {
   width: 13px; height: 13px; fill: none; stroke: currentColor;
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
@@ -694,8 +697,8 @@ body {
 // ── Krant definities ─────────────────────────────────────────────────────────
 const KRANTEN = {
   ST:  { naam: 'Stentor',            badge: 'Stentor',      kleur: '#d94e18' },
-  TT:  { naam: 'Tubantia',           badge: 'Tubantia',     kleur: '#c41230' },
-  VK:  { naam: 'Volkskrant',         badge: 'Volkskrant',   kleur: '#a81030' },
+  TT:  { naam: 'Tubantia',           badge: 'Tubantia',     kleur: '#b52060' },
+  VK:  { naam: 'Volkskrant',         badge: 'Volkskrant',   kleur: '#2e5496' },
   TEL: { naam: 'Telegraaf',          badge: 'Telegraaf',    kleur: '#1850c4' },
   TR:  { naam: 'Trouw',              badge: 'Trouw',        kleur: '#1a7a50' },
   ND:  { naam: 'Nederlands Dagblad', badge: 'Ned. Dagblad', kleur: '#5c30b0' },
@@ -1324,8 +1327,11 @@ function requestGPS() {
     state.gpsActief = false;
     state.gpsSort   = false;
     state.posLive   = null;
+    state.weerData  = null; // strip leegmaken zodat er geen verouderde data blijft staan
+    state.weerTijd  = 0;
     btn.classList.remove('active');
     render();
+    renderWxStrip(); // strip direct bijwerken (verbergt hem nu posLive en weerData leeg zijn)
     toon('GPS uitgeschakeld');
     return;
   }
