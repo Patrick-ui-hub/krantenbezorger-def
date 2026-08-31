@@ -704,38 +704,98 @@ const KRANTEN = {
   NRC: { naam: 'NRC Handelsblad',    badge: 'NRC',          kleur: '#8b1a2e' },
 };
 
-// ── Voorbeeldroute (weekdag-adressen = elke dag; weekend = alleen za/zo) ─────
+// ── Standaardroute (jouw echte bezorgroute — wordt gebruikt als fallback als de browser-opslag leeg is) ──
 const VOORBEELD = [
-  { nr:  '3', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['ST'],       lat: 52.12302, lng: 6.50104 },
-  { nr:  '5', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['TT','VK'],  lat: 52.12315, lng: 6.50112 },
-  { nr:  '7', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['ST'],       lat: 52.12328, lng: 6.50120 },
-  { nr: '12', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['TEL'],      lat: 52.12346, lng: 6.50138 },
-  { nr: '15', straat: 'Dorpsstraat',  dag: 'weekdag', kranten: ['ST','TR'],  lat: 52.12361, lng: 6.50154 },
-  { nr: '18', straat: 'Dorpsstraat',  dag: 'weekend', kranten: ['VK'],       lat: 52.12375, lng: 6.50168 },
-  { nr: '22', straat: 'Dorpsstraat',  dag: 'weekend', kranten: ['ND'],       lat: 52.12395, lng: 6.50185 },
-  { nr:  '2', straat: 'Molenweg',     dag: 'weekdag', kranten: ['TT'],       lat: 52.12280, lng: 6.50200 },
-  { nr:  '4', straat: 'Molenweg',     dag: 'weekdag', kranten: ['ST','TEL'], lat: 52.12292, lng: 6.50218 },
-  { nr:  '8', straat: 'Molenweg',     dag: 'weekdag', kranten: ['VK','TR'],  lat: 52.12310, lng: 6.50240 },
-  { nr: '14', straat: 'Molenweg',     dag: 'weekend', kranten: ['ST'],       lat: 52.12334, lng: 6.50265 },
-  { nr: '20', straat: 'Molenweg',     dag: 'weekend', kranten: ['ND','TT'],  lat: 52.12358, lng: 6.50290 },
-  { nr:  '1', straat: 'Kerkpad',      dag: 'weekdag', kranten: ['TR'],       lat: 52.12262, lng: 6.50082 },
-  { nr:  '3', straat: 'Kerkpad',      dag: 'weekdag', kranten: ['ST','ND'],  lat: 52.12250, lng: 6.50090 },
-  { nr:  '7', straat: 'Kerkpad',      dag: 'weekdag', kranten: ['TT'],       lat: 52.12238, lng: 6.50072 },
-  { nr:  '2', straat: 'Beekstraat',   dag: 'weekdag', kranten: ['VK'],       lat: 52.12402, lng: 6.50305 },
-  { nr:  '6', straat: 'Beekstraat',   dag: 'weekdag', kranten: ['ST','TEL'], lat: 52.12420, lng: 6.50322 },
-  { nr: '10', straat: 'Beekstraat',   dag: 'weekdag', kranten: ['TR','ND'],  lat: 52.12438, lng: 6.50340 },
-  { nr: '13', straat: 'Beekstraat',   dag: 'weekend', kranten: ['TT'],       lat: 52.12450, lng: 6.50355 },
-  { nr: '17', straat: 'Beekstraat',   dag: 'weekend', kranten: ['ST','VK'],  lat: 52.12468, lng: 6.50372 },
-  { nr:  '1', straat: 'Veldweg',      dag: 'weekdag', kranten: ['TEL'],      lat: 52.12200, lng: 6.50050 },
-  { nr:  '5', straat: 'Veldweg',      dag: 'weekdag', kranten: ['ST'],       lat: 52.12182, lng: 6.50038 },
-  { nr:  '8', straat: 'Veldweg',      dag: 'weekdag', kranten: ['VK','TR'],  lat: 52.12168, lng: 6.50028 },
-  { nr: '12', straat: 'Veldweg',      dag: 'weekend', kranten: ['ND'],       lat: 52.12150, lng: 6.50014 },
-  { nr:  '3', straat: 'Schoolstraat', dag: 'weekdag', kranten: ['TT','VK'],  lat: 52.12500, lng: 6.50150 },
-  { nr:  '9', straat: 'Schoolstraat', dag: 'weekdag', kranten: ['TEL'],      lat: 52.12518, lng: 6.50168 },
-  { nr: '15', straat: 'Schoolstraat', dag: 'weekdag', kranten: ['ST','TR'],  lat: 52.12536, lng: 6.50186 },
-  { nr:  '2', straat: 'Eikenstraat',  dag: 'weekdag', kranten: ['ND'],       lat: 52.12560, lng: 6.50242 },
-  { nr:  '7', straat: 'Eikenstraat',  dag: 'weekdag', kranten: ['ST','VK'],  lat: 52.12578, lng: 6.50258 },
-  { nr: '11', straat: 'Eikenstraat',  dag: 'weekend', kranten: ['TT','TEL'], lat: 52.12595, lng: 6.50274 },
+  { nr: "2",   straat: "Meiweg",            dag: 'weekdag', kranten: ["ST"],        lat: 52.13879, lng: 6.52347 },
+  { nr: "18",  straat: "Meiweg",            dag: 'weekend', kranten: ["ST"],        lat: 52.13933, lng: 6.52248 },
+  { nr: "16",  straat: "Meiweg",            dag: 'weekdag', kranten: ["TT"],        lat: 52.13924, lng: 6.52258 },
+  { nr: "13",  straat: "Meiweg",            dag: 'weekdag', kranten: ["TT"],        lat: 52.13904, lng: 6.52180 },
+  { nr: "15",  straat: "Meiweg",            dag: 'weekend', kranten: ["TT"],        lat: 52.13916, lng: 6.52208 },
+  { nr: "21",  straat: "Meiweg",            dag: 'weekdag', kranten: ["ST"],        lat: 52.13940, lng: 6.52174 },
+  { nr: "2",   straat: "Molenweg",          dag: 'weekdag', kranten: ["TT"],        lat: 52.13852, lng: 6.52335 },
+  { nr: "6",   straat: "Molenweg",          dag: 'weekdag', kranten: ["TR"],        lat: 52.13803, lng: 6.52253 },
+  { nr: "6",   straat: "Molenweg",          dag: 'weekend', kranten: ["NRC"],       lat: 52.13803, lng: 6.52253 },
+  { nr: "6",   straat: "Molenweg",          dag: 'weekend', kranten: ["TT"],        lat: 52.13803, lng: 6.52253 },
+  { nr: "8",   straat: "Molenweg",          dag: 'weekdag', kranten: ["ST"],        lat: 52.13751, lng: 6.52232 },
+  { nr: "11a", straat: "Molenweg",          dag: 'weekdag', kranten: ["ST"],        lat: 52.13705, lng: 6.52225 },
+  { nr: "27",  straat: "Dorpsstraat",       dag: 'weekend', kranten: ["VK"],        lat: 52.13854, lng: 6.52395 },
+  { nr: "20",  straat: "Dorpsstraat",       dag: 'weekend', kranten: ["NRC"],       lat: 52.13894, lng: 6.52425 },
+  { nr: "2",   straat: "Brinkweg",          dag: 'weekdag', kranten: ["VK"],        lat: 52.13832, lng: 6.52403 },
+  { nr: "4",   straat: "Brinkweg",          dag: 'weekdag', kranten: ["VK"],        lat: 52.13828, lng: 6.52413 },
+  { nr: "8",   straat: "Brinkweg",          dag: 'weekdag', kranten: ["TEL"],       lat: 52.13805, lng: 6.52487 },
+  { nr: "10",  straat: "Morsweg",           dag: 'weekdag', kranten: ["ST"],        lat: 52.13800, lng: 6.52505 },
+  { nr: "7",   straat: "Morsweg",           dag: 'weekdag', kranten: ["ST"],        lat: 52.13872, lng: 6.52496 },
+  { nr: "4",   straat: "Morsweg",           dag: 'weekend', kranten: ["NRC"],       lat: 52.13868, lng: 6.52451 },
+  { nr: "12",  straat: "Dorpsstraat",       dag: 'weekdag', kranten: ["TEL"],       lat: 52.13954, lng: 6.52495 },
+  { nr: "15",  straat: "Dorpsstraat",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13920, lng: 6.52508 },
+  { nr: "3",   straat: "Esweg",             dag: 'weekdag', kranten: ["TT"],        lat: 52.13967, lng: 6.52545 },
+  { nr: "7",   straat: "Esweg",             dag: 'weekdag', kranten: ["ST"],        lat: 52.14016, lng: 6.52570 },
+  { nr: "11",  straat: "Esweg",             dag: 'weekend', kranten: ["VK"],        lat: 52.14081, lng: 6.52556 },
+  { nr: "14",  straat: "Esweg",             dag: 'weekdag', kranten: ["VK"],        lat: 52.14005, lng: 6.52611 },
+  { nr: "16",  straat: "Esweg",             dag: 'weekdag', kranten: ["TT"],        lat: 52.14020, lng: 6.52611 },
+  { nr: "18",  straat: "Esweg",             dag: 'weekdag', kranten: ["ST"],        lat: 52.14037, lng: 6.52613 },
+  { nr: "4",   straat: "Dorpsstraat",       dag: 'weekdag', kranten: ["TEL"],       lat: 52.13926, lng: 6.52625 },
+  { nr: "2",   straat: "Dorpsstraat",       dag: 'weekend', kranten: ["TEL"],       lat: 52.13923, lng: 6.52648 },
+  { nr: "3",   straat: "Dorpsstraat",       dag: 'weekdag', kranten: ["TEL"],       lat: 52.13895, lng: 6.52660 },
+  { nr: "18",  straat: "Kerkplein",         dag: 'weekdag', kranten: ["TT"],        lat: 52.13944, lng: 6.52664 },
+  { nr: "6a",  straat: "Kerkplein",         dag: 'weekdag', kranten: ["VK"],        lat: 52.13930, lng: 6.52763 },
+  { nr: "2",   straat: "Kerkplein",         dag: 'weekend', kranten: ["ND"],        lat: 52.13899, lng: 6.52773 },
+  { nr: "1",   straat: "Hagensweg",         dag: 'weekdag', kranten: ["VK"],        lat: 52.13951, lng: 6.52727 },
+  { nr: "10",  straat: "Hagensweg",         dag: 'weekdag', kranten: ["ST"],        lat: 52.13973, lng: 6.52759 },
+  { nr: "16",  straat: "Hagensweg",         dag: 'weekdag', kranten: ["ST"],        lat: 52.13980, lng: 6.52693 },
+  { nr: "4",   straat: "Pastorieweg",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13866, lng: 6.52812 },
+  { nr: "5",   straat: "Pastorieweg",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13884, lng: 6.52846 },
+  { nr: "6",   straat: "Pastorieweg",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13864, lng: 6.52834 },
+  { nr: "7a",  straat: "Pastorieweg",       dag: 'weekdag', kranten: ["TR"],        lat: 52.13880, lng: 6.52882 },
+  { nr: "11",  straat: "Pastorieweg",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13876, lng: 6.52933 },
+  { nr: "13",  straat: "Pastorieweg",       dag: 'weekdag', kranten: ["ST"],        lat: 52.13877, lng: 6.52943 },
+  { nr: "19",  straat: "Pastorieweg",       dag: 'weekdag', kranten: ["ST"],        lat: 52.13866, lng: 6.53004 },
+  { nr: "21",  straat: "Pastorieweg",       dag: 'weekdag', kranten: ["TEL"],       lat: 52.13863, lng: 6.53026 },
+  { nr: "15",  straat: "Zonnekamp",         dag: 'weekdag', kranten: ["ST"],        lat: 52.13857, lng: 6.52887 },
+  { nr: "10",  straat: "Zonnekamp",         dag: 'weekdag', kranten: ["ST"],        lat: 52.13813, lng: 6.52907 },
+  { nr: "6",   straat: "Zonnekamp",         dag: 'weekend', kranten: ["TT"],        lat: 52.13802, lng: 6.52903 },
+  { nr: "4",   straat: "Zonnekamp",         dag: 'weekdag', kranten: ["ST"],        lat: 52.13787, lng: 6.52898 },
+  { nr: "9",   straat: "Zonnekamp",         dag: 'weekdag', kranten: ["TT"],        lat: 52.13791, lng: 6.52858 },
+  { nr: "5",   straat: "Zonnekamp",         dag: 'weekdag', kranten: ["ST"],        lat: 52.13790, lng: 6.52805 },
+  { nr: "3",   straat: "Zonnekamp",         dag: 'weekdag', kranten: ["TT"],        lat: 52.13787, lng: 6.52779 },
+  { nr: "1a",  straat: "Zonnekamp",         dag: 'weekdag', kranten: ["TT"],        lat: 52.13783, lng: 6.52750 },
+  { nr: "8",   straat: "Maaldrinkstraat",   dag: 'weekdag', kranten: ["ST"],        lat: 52.13850, lng: 6.52681 },
+  { nr: "1",   straat: "Maaldrinkstraat",   dag: 'weekdag', kranten: ["TT"],        lat: 52.13828, lng: 6.52657 },
+  { nr: "10",  straat: "Maaldrinkstraat",   dag: 'weekdag', kranten: ["ST"],        lat: 52.13855, lng: 6.52646 },
+  { nr: "16",  straat: "Maaldrinkstraat",   dag: 'weekdag', kranten: ["ST"],        lat: 52.13865, lng: 6.52569 },
+  { nr: "18",  straat: "Maaldrinkstraat",   dag: 'weekdag', kranten: ["ST"],        lat: 52.13852, lng: 6.52566 },
+  { nr: "6",   straat: "Pellenweversweg",   dag: 'weekdag', kranten: ["TT"],        lat: 52.13814, lng: 6.52560 },
+  { nr: "2a",  straat: "Pellenweversweg",   dag: 'weekend', kranten: ["TT"],        lat: 52.13803, lng: 6.52646 },
+  { nr: "3",   straat: "Pellenweversweg",   dag: 'weekdag', kranten: ["TT"],        lat: 52.13777, lng: 6.52632 },
+  { nr: "20",  straat: "Keistraat",         dag: 'weekdag', kranten: ["TT"],        lat: 52.13730, lng: 6.52665 },
+  { nr: "2",   straat: "Den Goarden",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13713, lng: 6.52740 },
+  { nr: "6",   straat: "Den Goarden",       dag: 'weekend', kranten: ["TT"],        lat: 52.13715, lng: 6.52783 },
+  { nr: "8",   straat: "Den Goarden",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13715, lng: 6.52819 },
+  { nr: "12",  straat: "Den Goarden",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13716, lng: 6.52857 },
+  { nr: "7",   straat: "Den Goarden",       dag: 'weekdag', kranten: ["ST"],        lat: 52.13743, lng: 6.52816 },
+  { nr: "27",  straat: "Keistraat",         dag: 'weekdag', kranten: ["ST"],        lat: 52.13661, lng: 6.52811 },
+  { nr: "3",   straat: "Karssenberg",       dag: 'weekdag', kranten: ["ST"],        lat: 52.13653, lng: 6.52857 },
+  { nr: "17",  straat: "Karssenberg",       dag: 'weekdag', kranten: ["TEL"],       lat: 52.13685, lng: 6.52876 },
+  { nr: "28",  straat: "Het Rosbach",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13691, lng: 6.52908 },
+  { nr: "22",  straat: "Het Rosbach",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13690, lng: 6.52941 },
+  { nr: "20",  straat: "Het Rosbach",       dag: 'weekend', kranten: ["TT"],        lat: 52.13691, lng: 6.52960 },
+  { nr: "18",  straat: "Het Rosbach",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13711, lng: 6.52955 },
+  { nr: "14",  straat: "Het Rosbach",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13726, lng: 6.52971 },
+  { nr: "13",  straat: "Het Rosbach",       dag: 'weekdag', kranten: ["ST"],        lat: 52.13761, lng: 6.53006 },
+  { nr: "11",  straat: "Het Rosbach",       dag: 'weekend', kranten: ["TEL"],       lat: 52.13763, lng: 6.52997 },
+  { nr: "3",   straat: "Het Rosbach",       dag: 'weekend', kranten: ["TT"],        lat: 52.13787, lng: 6.52965 },
+  { nr: "3",   straat: "Het Rosbach",       dag: 'weekend', kranten: ["VK"],        lat: 52.13787, lng: 6.52965 },
+  { nr: "6",   straat: "Het Rosbach",       dag: 'weekend', kranten: ["TT"],        lat: 52.13751, lng: 6.52955 },
+  { nr: "4",   straat: "Het Rosbach",       dag: 'weekdag', kranten: ["TT"],        lat: 52.13754, lng: 6.52947 },
+  { nr: "2",   straat: "Het Rosbach",       dag: 'weekdag', kranten: ["ST"],        lat: 52.13756, lng: 6.52938 },
+  { nr: "32",  straat: "Morsweg",           dag: 'weekdag', kranten: ["TT"],        lat: 52.13593, lng: 6.52642 },
+  { nr: "28",  straat: "Morsweg",           dag: 'weekdag', kranten: ["ST"],        lat: 52.13686, lng: 6.52578 },
+  { nr: "24",  straat: "Morsweg",           dag: 'weekdag', kranten: ["TT"],        lat: 52.13715, lng: 6.52546 },
+  { nr: "22",  straat: "Morsweg",           dag: 'weekdag', kranten: ["TT"],        lat: 52.13721, lng: 6.52543 },
+  { nr: "6",   straat: "De Bleeke",         dag: 'weekdag', kranten: ["ST"],        lat: 52.13753, lng: 6.52478 },
+  { nr: "8",   straat: "De Bleeke",         dag: 'weekend', kranten: ["TT"],        lat: 52.13750, lng: 6.52448 },
+  { nr: "14",  straat: "De Bleeke",         dag: 'weekend', kranten: ["VK"],        lat: 52.13718, lng: 6.52473 },
+  { nr: "23",  straat: "Morsweg",           dag: 'weekdag', kranten: ["TT"],        lat: 52.13776, lng: 6.52590 },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -792,6 +852,7 @@ let state = {
 };
 
 // ── Opgeslagen data herstellen ────────────────────────────────────────────────
+let _standaardRouteGeladen = false;
 (function init() {
   try {
     const t = localStorage.getItem('kb_thema');
@@ -807,6 +868,9 @@ let state = {
         lat: a.lat ?? null, lng: a.lng ?? null,
         bezorgd: false, afstand: null,
       }));
+    } else {
+      // Geen opgeslagen route — standaardroute (VOORBEELD) wordt geladen
+      _standaardRouteGeladen = true;
     }
 
     const vg = JSON.parse(localStorage.getItem('kb_voortgang') || 'null');
@@ -1444,12 +1508,12 @@ function switchTab(tab) {
 }
 
 let toastTimer;
-function toon(bericht, fout=false) {
+function toon(bericht, fout=false, duur=2400) {
   const el = document.getElementById('toast');
   el.textContent = bericht;
   el.className = 'toast show' + (fout ? ' fout' : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duur);
 }
 
 function updateTimer() {
@@ -1490,6 +1554,11 @@ try {
 updateTimer();
 setInterval(updateTimer, 1000);
 render();
+
+// Waarschuw de gebruiker als de standaardroute geladen werd (geen opgeslagen route gevonden)
+if (_standaardRouteGeladen) {
+  setTimeout(() => toon('⚠ Geen opgeslagen route — standaardroute geladen. Importeer je CSV via Instellingen om op te slaan.', false, 6000), 400);
+}
 
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && !state.wakeLock) {
