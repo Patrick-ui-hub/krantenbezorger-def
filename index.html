@@ -290,10 +290,17 @@ body {
 
 /* ── Weer & GPS strip ── */
 .wx-strip {
-  display: none; align-items: center; flex-wrap: wrap; gap: 2px 0;
-  padding: 7px 0 4px;
+  /* Altijd in de layout; max-height-transitie voorkomt harde sprong */
+  display: flex; align-items: center; flex-wrap: wrap; gap: 2px 0;
+  overflow: hidden;
+  max-height: 0; padding-top: 0; padding-bottom: 0;
+  transition: max-height .3s ease, padding-top .3s ease, padding-bottom .3s ease;
 }
-.wx-strip.toon { display: flex; }
+.wx-strip.toon {
+  max-height: 90px; /* genoeg voor 2 regels GPS + weerdata */
+  padding-top: 7px;
+  padding-bottom: 4px;
+}
 .wx-item {
   font-family: var(--font-mono); font-size: 13px; color: var(--text-2);
   white-space: nowrap; font-variant-numeric: tabular-nums;
@@ -512,6 +519,55 @@ body {
 .toast.fout { background: var(--danger); }
 
 @media (prefers-reduced-motion: reduce) { *, .progress-bar-fill { transition: none !important; } }
+
+/* ── Landscape orientation ── */
+@media (orientation: landscape) {
+  body { max-width: 100%; }
+  .app-header { padding: 6px 16px 5px; }
+  .header-top { margin-bottom: 4px; }
+  .progress-bar-wrap { margin-top: 5px; }
+  .krant-chip { padding: 3px 7px 3px 5px; }
+  .krant-count { font-size: 12px; }
+  .modus-tab { padding: 6px 8px 5px; font-size: 11px; }
+  .route-controls { padding: 5px 16px; }
+  .ctrl-btn { padding: 4px 10px; font-size: 11px; }
+  .filter-bar { padding: 0 12px; }
+  .filter-tab { padding: 5px 4px; font-size: 11px; }
+  .addr-row { padding: 7px 16px; gap: 10px; }
+  .house-nr { font-size: 17px; }
+  .tab-bar { height: 46px; }
+  .tab-btn { font-size: 9px; }
+  .tab-icon { font-size: 17px; }
+  .address-list { padding-bottom: 56px; }
+}
+
+/* ── Undo button disabled state ── */
+.icon-btn:disabled { opacity: .28; cursor: default; pointer-events: none; }
+
+/* ── Swipe-to-deliver ── */
+.addr-row {
+  /* add transition for snap-back after swipe release */
+  transition: background .12s, transform .18s ease;
+}
+.addr-row.swiping {
+  transition: background .05s; /* snappier feedback during swipe */
+}
+.addr-row.swipe-done {
+  /* briefly flash green on successful swipe-right */
+  background: var(--ok-dim) !important;
+}
+.addr-row.swipe-undo {
+  /* briefly flash red on swipe-left undo */
+  background: var(--danger-dim) !important;
+}
+/* Swipe hint icons shown at edges during swipe */
+.addr-row::before, .addr-row::after {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  font-size: 16px; opacity: 0; transition: opacity .1s; pointer-events: none;
+}
+.addr-row { position: relative; }
+.addr-row.swiping-right::before { content: '✓'; left: 10px; opacity: 1; color: var(--ok); }
+.addr-row.swiping-left::after  { content: '↩'; right: 10px; opacity: 1; color: var(--danger); }
 </style>
 
 <!-- ── Header ── -->
@@ -520,6 +576,7 @@ body {
     <div class="app-name"><span>📰</span>Krantenbezorger</div>
     <div class="header-right">
       <span class="countdown" id="clock"></span>
+      <button class="icon-btn" id="undoBtn" disabled title="Ongedaan maken (↩)" onclick="undoLaatste()">↩</button>
       <button class="icon-btn" id="wakeLockBtn" title="Scherm aan houden" onclick="toggleWakeLock()">☀</button>
       <button class="icon-btn" title="Thema wisselen" onclick="toggleTheme()">◑</button>
     </div>
@@ -1161,7 +1218,7 @@ function render() {
     const notitie = a.notitie
       ? `<div class="addr-note"><span class="addr-note-icon">⚑</span>${a.notitie}</div>`
       : '';
-    return `<div class="addr-row${a.bezorgd?' bezorgd':''}${toonWEBadge&&isWE?' is-weekend':''}" data-id="${a.id}" onclick="rijKlik(event,${a.id})">
+    return `<div class="addr-row${a.bezorgd?' bezorgd':''}${toonWEBadge&&isWE?' is-weekend':''}" data-id="${a.id}" ontouchstart="startSwipe(event,${a.id})">
       <div class="drag-handle" ontouchstart="startDrag(event,${a.id})">⋮⋮</div>
       <div class="check-box">${a.bezorgd ? '✓' : ''}</div>
       <div class="addr-body">
@@ -1234,10 +1291,39 @@ function render() {
   }
 }
 
+// ── Undo stack ────────────────────────────────────────────────────────────────
+const _undoStack = []; // [{ id, bezorgd }] — vorige toestand per actie
+const UNDO_MAX   = 20;
+
+function doBezorgd(id, bezorgd) {
+  const a = state.adressen.find(x => x.id === id);
+  if (!a || a.bezorgd === bezorgd) return;
+  _undoStack.push({ id, bezorgd: a.bezorgd }); // sla vorige toestand op
+  if (_undoStack.length > UNDO_MAX) _undoStack.shift();
+  a.bezorgd = bezorgd;
+  slaVoortgangOp();
+  render();
+  updateUndoBtn();
+}
+
+function undoLaatste() {
+  if (!_undoStack.length) return;
+  const { id, bezorgd } = _undoStack.pop();
+  const a = state.adressen.find(x => x.id === id);
+  if (a) { a.bezorgd = bezorgd; slaVoortgangOp(); render(); }
+  updateUndoBtn();
+  toon('↩ Ongedaan gemaakt');
+}
+
+function updateUndoBtn() {
+  const btn = document.getElementById('undoBtn');
+  if (btn) btn.disabled = _undoStack.length === 0;
+}
+
 // ── Acties ────────────────────────────────────────────────────────────────────
 function toggleBezorgd(id) {
   const a = state.adressen.find(x => x.id === id);
-  if (a) { a.bezorgd = !a.bezorgd; slaVoortgangOp(); render(); }
+  if (a) doBezorgd(id, !a.bezorgd);
 }
 
 function setModus(modus) {
@@ -1263,10 +1349,6 @@ function toggleBewerken() {
   render();
 }
 
-function rijKlik(event, id) {
-  if (state.bewerken) return; // geen bezorging-toggle in bewerkmodus
-  toggleBezorgd(id);
-}
 
 function verwijderAdres(id, event) {
   event.stopPropagation();
@@ -1276,7 +1358,8 @@ function verwijderAdres(id, event) {
 }
 
 // ── Drag-to-reorder (touch) ──────────────────────────────────────────────────
-let _drag = null;
+let _drag  = null;
+let _swipe = null; // { id, startX, startY, dx, el, decided, cancelled }
 
 function startDrag(e, id) {
   if (!state.bewerken) return;
@@ -1286,43 +1369,143 @@ function startDrag(e, id) {
   document.querySelector(`.addr-row[data-id="${id}"]`)?.classList.add('is-dragging');
 }
 
-document.addEventListener('touchmove', e => {
-  if (!_drag) return;
-  e.preventDefault();
+function startSwipe(e, id) {
+  // In bewerkmodus werkt alleen de drag-handle, geen swipe
+  if (state.bewerken) return;
+  // Negeer aanraking op interactieve sub-elementen
+  if (e.target.closest('.drag-handle') || e.target.closest('.del-btn') || e.target.closest('button')) return;
   const touch = e.touches[0];
-  const el = document.elementFromPoint(touch.clientX, touch.clientY);
-  const targetRow = el?.closest('.addr-row[data-id]');
-  document.querySelectorAll('.drag-over-before,.drag-over-after').forEach(r => {
-    r.classList.remove('drag-over-before','drag-over-after');
-  });
-  if (targetRow) {
-    const targetId = parseInt(targetRow.dataset.id);
-    if (targetId !== _drag.id) {
-      const rect = targetRow.getBoundingClientRect();
-      const isBefore = touch.clientY < rect.top + rect.height / 2;
-      targetRow.classList.add(isBefore ? 'drag-over-before' : 'drag-over-after');
-      _drag.overRow = { id: targetId, before: isBefore };
+  _swipe = {
+    id,
+    startX:    touch.clientX,
+    startY:    touch.clientY,
+    dx:        0,
+    el:        e.currentTarget,
+    decided:   false,
+    cancelled: false,
+  };
+}
+
+document.addEventListener('touchmove', e => {
+  // ── Drag (bewerkmodus) ──
+  if (_drag) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetRow = el?.closest('.addr-row[data-id]');
+    document.querySelectorAll('.drag-over-before,.drag-over-after').forEach(r => {
+      r.classList.remove('drag-over-before','drag-over-after');
+    });
+    if (targetRow) {
+      const targetId = parseInt(targetRow.dataset.id);
+      if (targetId !== _drag.id) {
+        const rect = targetRow.getBoundingClientRect();
+        const isBefore = touch.clientY < rect.top + rect.height / 2;
+        targetRow.classList.add(isBefore ? 'drag-over-before' : 'drag-over-after');
+        _drag.overRow = { id: targetId, before: isBefore };
+      }
     }
+    return;
+  }
+
+  // ── Swipe (bezorgen / ongedaan) ──
+  if (!_swipe || _swipe.cancelled) return;
+  const touch = e.touches[0];
+  const dx = touch.clientX - _swipe.startX;
+  const dy = touch.clientY - _swipe.startY;
+
+  if (!_swipe.decided) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // wacht op duidelijke richting
+    if (Math.abs(dy) > Math.abs(dx)) {
+      _swipe.cancelled = true; // verticaal scrollen — annuleer swipe
+      return;
+    }
+    _swipe.decided = true;
+  }
+
+  e.preventDefault(); // voorkom scrollen tijdens horizontale swipe
+  _swipe.dx = dx;
+
+  const a = state.adressen.find(x => x.id === _swipe.id);
+  const maxSwipe = 100;
+  const clamped  = Math.max(-maxSwipe, Math.min(maxSwipe, dx));
+  _swipe.el.style.transform  = `translateX(${clamped}px)`;
+  _swipe.el.style.transition = 'none'; // direct volgen
+
+  // Visueel: kleurverloop + richtingsicon
+  _swipe.el.classList.add('swiping');
+  _swipe.el.classList.remove('swiping-right', 'swiping-left');
+  if (a && !a.bezorgd && dx > 20) {
+    _swipe.el.classList.add('swiping-right');
+    _swipe.el.style.background = `rgba(71,168,118,${Math.min(0.25, dx/300)})`;
+  } else if (a && a.bezorgd && dx < -20) {
+    _swipe.el.classList.add('swiping-left');
+    _swipe.el.style.background = `rgba(224,80,80,${Math.min(0.25, -dx/300)})`;
+  } else {
+    _swipe.el.style.background = '';
   }
 }, { passive: false });
 
 document.addEventListener('touchend', () => {
-  if (!_drag) return;
-  document.querySelectorAll('.is-dragging,.drag-over-before,.drag-over-after').forEach(r => {
-    r.classList.remove('is-dragging','drag-over-before','drag-over-after');
-  });
-  if (_drag.overRow) {
-    const fromIdx = state.adressen.findIndex(a => a.id === _drag.id);
-    const toIdx   = state.adressen.findIndex(a => a.id === _drag.overRow.id);
-    if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
-      const [item] = state.adressen.splice(fromIdx, 1);
-      const newTo  = state.adressen.findIndex(a => a.id === _drag.overRow.id);
-      state.adressen.splice(_drag.overRow.before ? newTo : newTo + 1, 0, item);
-      slaRouteOp();
+  // ── Drag afronden ──
+  if (_drag) {
+    document.querySelectorAll('.is-dragging,.drag-over-before,.drag-over-after').forEach(r => {
+      r.classList.remove('is-dragging','drag-over-before','drag-over-after');
+    });
+    if (_drag.overRow) {
+      const fromIdx = state.adressen.findIndex(a => a.id === _drag.id);
+      const toIdx   = state.adressen.findIndex(a => a.id === _drag.overRow.id);
+      if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
+        const [item] = state.adressen.splice(fromIdx, 1);
+        const newTo  = state.adressen.findIndex(a => a.id === _drag.overRow.id);
+        state.adressen.splice(_drag.overRow.before ? newTo : newTo + 1, 0, item);
+        slaRouteOp();
+      }
+    }
+    _drag = null;
+    render();
+  }
+
+  // ── Swipe afronden ──
+  if (_swipe) {
+    const { id, dx, el, cancelled, decided } = _swipe;
+    _swipe = null;
+
+    // Herstel stijl met animatie
+    el.style.transition = '';
+    el.style.transform  = '';
+    el.style.background = '';
+    el.classList.remove('swiping', 'swiping-right', 'swiping-left');
+
+    if (!cancelled && decided && dx !== undefined) {
+      const a = state.adressen.find(x => x.id === id);
+      if (a) {
+        if (dx > 50 && !a.bezorgd) {
+          // Swipe rechts → bezorgd
+          el.classList.add('swipe-done');
+          setTimeout(() => el.classList.remove('swipe-done'), 350);
+          doBezorgd(id, true);
+        } else if (dx < -50 && a.bezorgd) {
+          // Swipe links → ongedaan
+          el.classList.add('swipe-undo');
+          setTimeout(() => el.classList.remove('swipe-undo'), 350);
+          doBezorgd(id, false);
+          toon('↩ Ongedaan gemaakt');
+        }
+      }
     }
   }
-  _drag = null;
-  render();
+});
+
+// Swipe annuleren bij touchcancel (bijv. systeemmelding)
+document.addEventListener('touchcancel', () => {
+  if (_swipe) {
+    _swipe.el.style.transition = '';
+    _swipe.el.style.transform  = '';
+    _swipe.el.style.background = '';
+    _swipe.el.classList.remove('swiping', 'swiping-right', 'swiping-left');
+    _swipe = null;
+  }
 });
 
 // ── Adres toevoegen modal ────────────────────────────────────────────────────
@@ -1470,6 +1653,8 @@ function resetRoute() {
   state.modus = isWeekend() ? 'weekend' : 'weekdag';
   state.modusHandmatig = false;
   try { localStorage.removeItem('kb_voortgang'); localStorage.removeItem('kb_modus'); } catch(e) {}
+  _undoStack.length = 0;
+  updateUndoBtn();
   document.getElementById('gpsBtn').classList.remove('active');
   render();
   switchTab('route');
@@ -1568,4 +1753,22 @@ document.addEventListener('visibilitychange', async () => {
     }
   }
 });
+
+// ── Dynamische header-hoogte (voorkomt springende lijst) ──────────────────────
+function updateHeaderHeight() {
+  const h = document.getElementById('appHeader').offsetHeight;
+  document.documentElement.style.setProperty('--header-h', h + 'px');
+}
+// Automatisch bijwerken als de header van hoogte verandert (GPS-balk in/uit)
+if (typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(updateHeaderHeight).observe(document.getElementById('appHeader'));
+}
+updateHeaderHeight();
+
+// ── Landscape oriëntatie proberen te vergrendelen ─────────────────────────────
+// Werkt alleen als de app als PWA is geïnstalleerd of in fullscreen draait;
+// in een gewone browsertab faalt dit stil.
+if (screen.orientation && typeof screen.orientation.lock === 'function') {
+  screen.orientation.lock('landscape').catch(() => {});
+}
 </script>
