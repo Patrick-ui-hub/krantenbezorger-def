@@ -520,25 +520,134 @@ body {
 
 @media (prefers-reduced-motion: reduce) { *, .progress-bar-fill { transition: none !important; } }
 
-/* ── Landscape orientation ── */
+/* ── Landscape orientation: twee-paneel layout ── */
 @media (orientation: landscape) {
-  body { max-width: 100%; }
-  .app-header { padding: 6px 16px 5px; }
-  .header-top { margin-bottom: 4px; }
-  .progress-bar-wrap { margin-top: 5px; }
-  .krant-chip { padding: 3px 7px 3px 5px; }
-  .krant-count { font-size: 12px; }
-  .modus-tab { padding: 6px 8px 5px; font-size: 11px; }
-  .route-controls { padding: 5px 16px; }
-  .ctrl-btn { padding: 4px 10px; font-size: 11px; }
-  .filter-bar { padding: 0 12px; }
-  .filter-tab { padding: 5px 4px; font-size: 11px; }
-  .addr-row { padding: 7px 16px; gap: 10px; }
+
+  /* body wordt een grid met links stationair, rechts dynamisch */
+  body {
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: 256px 1fr;
+    grid-template-rows: 1fr;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ── Linker paneel (stationair) ── */
+  .ls-left {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Header hoeft niet meer sticky te zijn — het paneel scollt zelf */
+  .app-header {
+    position: static;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border-faint);
+  }
+  .header-top { margin-bottom: 6px; }
+  .app-name { font-size: 12px; }
+  .countdown { font-size: 17px; }
+  .icon-btn { width: 28px; height: 28px; font-size: 13px; }
+  .header-right { gap: 5px; }
+
+  /* Weerstrip in landscape: iets compacter */
+  .wx-strip { flex-wrap: wrap; gap: 4px 0; }
+  .wx-strip.toon { max-height: 160px; padding-top: 6px; padding-bottom: 4px; }
+  .wx-item { font-size: 11px; padding-right: 10px; line-height: 1.45; }
+  .wx-item b { font-size: 13px; }
+
+  /* Krant-chips: wrap zodat ze niet scrollen */
+  .krant-summary { flex-wrap: wrap; gap: 4px; overflow-x: visible; margin-top: 2px; }
+  .krant-chip { padding: 3px 7px 3px 5px; flex-shrink: 1; }
+  .krant-count { font-size: 13px; }
+
+  /* Progress bar: iets minder ruimte */
+  .progress-bar-wrap { margin-top: 6px; }
+
+  /* Modus-rij in het linker paneel: altijd zichtbaar, knoppen gestapeld */
+  .modus-row {
+    display: flex !important; /* override JS switchTab hide */
+    position: static;          /* niet meer sticky */
+    flex-direction: column;
+    border-bottom: none;
+    border-top: 1px solid var(--border);
+    padding: 6px 0;
+    flex-shrink: 0;
+  }
+  .modus-tab {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    border-radius: 0;
+    font-size: 12px;
+  }
+  .modus-tab.active {
+    border-left-color: var(--accent);
+    border-bottom-color: transparent;
+  }
+
+  /* ── Rechter paneel (dynamisch) ── */
+  #routeTab,
+  .invoer-screen,
+  .inst-screen {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  #routeTab {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Invoer- en instellingen-schermen: ook in rechter kolom */
+  .invoer-screen.show,
+  .inst-screen.show {
+    display: block;
+    overflow-y: auto;
+    height: 100dvh;
+    padding: 16px 16px 56px;
+  }
+
+  /* Route controls: compacter */
+  .route-controls { padding: 5px 12px; }
+  .ctrl-btn { padding: 4px 9px; font-size: 11px; }
+
+  /* Filter bar */
+  .filter-bar { padding: 0 10px; }
+  .filter-tab { padding: 6px 4px; font-size: 11px; }
+
+  /* Adreslijst scrollt in het rechter paneel */
+  .address-list { flex: 1; overflow-y: auto; padding-bottom: 56px; }
+
+  /* Adresrijen: compacter */
+  .addr-row { padding: 7px 14px; gap: 9px; }
   .house-nr { font-size: 17px; }
-  .tab-bar { height: 46px; }
+
+  /* Tab-bar: vaste positie onderin, volle breedte */
+  .tab-bar {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%; max-width: 100%;
+    transform: none;
+    height: 46px;
+    z-index: 20;
+  }
   .tab-btn { font-size: 9px; }
   .tab-icon { font-size: 17px; }
-  .address-list { padding-bottom: 56px; }
+
+  /* Toast: iets hoger vanwege compactere tab-bar */
+  .toast { bottom: 56px; }
 }
 
 /* ── Undo button disabled state ── */
@@ -570,6 +679,9 @@ body {
 .addr-row.swiping-left::after  { content: '↩'; right: 10px; opacity: 1; color: var(--danger); }
 </style>
 
+<!-- ── Linker paneel (landscape: stationair) ── -->
+<div class="ls-left" id="lsLeft">
+
 <!-- ── Header ── -->
 <header class="app-header" id="appHeader">
   <div class="header-top">
@@ -595,6 +707,8 @@ body {
     Weekend<span class="count-badge" id="weCount"></span>
   </button>
 </div>
+
+</div><!-- /.ls-left -->
 
 <!-- ── Route tab ── -->
 <div id="routeTab">
