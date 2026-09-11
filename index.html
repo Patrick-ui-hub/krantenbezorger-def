@@ -1816,6 +1816,46 @@ function toggleTheme() {
 let _zaklampStream = null;
 let _zaklampVideo  = null;
 
+async function _zaklampStart(deviceId) {
+  /* Open één specifieke camera en probeer torch aan te zetten.
+     Geeft de track terug bij succes, null bij mislukking. */
+  const constraints = deviceId
+    ? { video: { deviceId: { exact: deviceId } } }
+    : { video: { facingMode: 'environment' } };
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  const track  = stream.getVideoTracks()[0];
+
+  /* verborgen video-element — Android Chrome vereist dit */
+  const vid = document.createElement('video');
+  vid.srcObject = stream; vid.playsInline = true; vid.muted = true;
+  vid.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:0;left:0;';
+  document.body.appendChild(vid);
+  await vid.play();
+  await new Promise(r => setTimeout(r, 500));
+
+  /* probeer torch te activeren */
+  let gelukt = false;
+  try { await track.applyConstraints({ advanced: [{ torch: true }] }); gelukt = true; } catch(_) {}
+  if (!gelukt) {
+    try { await track.applyConstraints({ torch: true }); gelukt = true; } catch(_) {}
+  }
+  /* controleer of torch echt aan is (sommige browsers accepteren
+     de constraint maar activeren de hardware niet) */
+  if (gelukt) {
+    const settings = track.getSettings ? track.getSettings() : {};
+    if (settings.torch === false) gelukt = false;
+  }
+
+  if (!gelukt) {
+    stream.getTracks().forEach(t => t.stop());
+    vid.remove();
+    return null;
+  }
+  _zaklampStream = stream;
+  _zaklampVideo  = vid;
+  return track;
+}
+
 async function toggleZaklamp() {
   const btn = document.getElementById('zakLampBtn');
   try {
@@ -1827,37 +1867,23 @@ async function toggleZaklamp() {
       return;
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
-    });
-    _zaklampStream = stream;
+    /* Loop langs alle camera's om de juiste te vinden (Galaxy S21
+       heeft 3 lenzen; alleen de hoofdcamera heeft een torch) */
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cams = devices.filter(d => d.kind === 'videoinput');
 
-    /* Android Chrome vereist dat de stream wordt afgespeeld via een
-       video-element voordat applyConstraints({ torch }) werkt */
-    const vid = document.createElement('video');
-    vid.srcObject   = stream;
-    vid.playsInline = true;
-    vid.muted       = true;
-    vid.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:0;left:0;';
-    document.body.appendChild(vid);
-    _zaklampVideo = vid;
-    await vid.play();
-
-    /* wacht tot de camera echt actief is */
-    await new Promise(r => setTimeout(r, 500));
-
-    const track = stream.getVideoTracks()[0];
-    let aan = false;
-    try { await track.applyConstraints({ advanced: [{ torch: true }] }); aan = true; } catch(_) {}
-    if (!aan) {
-      try { await track.applyConstraints({ torch: true }); aan = true; } catch(_) {}
+    let track = null;
+    /* Probeer eerst op facingMode, dan alle camera's afzonderlijk */
+    track = await _zaklampStart(null).catch(() => null);
+    if (!track) {
+      for (const cam of cams) {
+        track = await _zaklampStart(cam.deviceId).catch(() => null);
+        if (track) break;
+      }
     }
 
-    if (!aan) {
-      stream.getTracks().forEach(t => t.stop());
-      _zaklampStream = null;
-      vid.remove(); _zaklampVideo = null;
-      toon('Zaklamp niet ondersteund door deze browser', true);
+    if (!track) {
+      toon('Zaklamp werkt niet via deze browser', true);
       return;
     }
     btn.classList.add('active');
@@ -1868,7 +1894,7 @@ async function toggleZaklamp() {
     btn.classList.remove('active');
     toon(e?.name === 'NotAllowedError'
       ? 'Camera-toestemming geweigerd — sta toe in browserinstellingen'
-      : 'Zaklamp werkt niet — controleer camera-toestemming', true);
+      : 'Zaklamp werkt niet', true);
   }
 }
 
