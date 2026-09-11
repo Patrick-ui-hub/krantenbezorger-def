@@ -92,7 +92,6 @@ body {
 .header-right { display: flex; align-items: center; gap: 7px; }
 .app-naam-lang { display: inline; } /* portret: lange naam zichtbaar */
 .app-naam-kort { display: none; }   /* portret: korte naam verborgen */
-#zakLampBtn { display: none; }      /* portret: zaklamp-knop verborgen */
 #zakLampBtn.active { color: var(--accent); }
 .countdown {
   font-family: var(--font-mono); font-size: 13px; font-weight: 600;
@@ -1824,21 +1823,23 @@ async function toggleZaklamp() {
       btn.classList.remove('active');
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const track = stream.getVideoTracks()[0];
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    if (!caps.torch) {
-      stream.getTracks().forEach(t => t.stop());
-      toon('Zaklamp niet ondersteund door deze browser/telefoon', true);
-      return;
-    }
+    /* exact: 'environment' dwingt achterste camera af (vereist voor torch) */
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { exact: 'environment' } }
+    });
     _zaklampStream = stream;
+    const track = stream.getVideoTracks()[0];
+    /* kleine pauze zodat de camera tijd heeft om op te starten */
+    await new Promise(r => setTimeout(r, 250));
     await track.applyConstraints({ advanced: [{ torch: true }] });
     btn.classList.add('active');
   } catch(e) {
     if (_zaklampStream) { _zaklampStream.getTracks().forEach(t => t.stop()); _zaklampStream = null; }
     btn.classList.remove('active');
-    toon('Zaklamp niet beschikbaar — controleer camera-toestemming', true);
+    const msg = (e && e.name === 'NotAllowedError')
+      ? 'Camera-toestemming geweigerd — sta toe in browserinstellingen'
+      : 'Zaklamp werkt niet op dit apparaat of in deze browser';
+    toon(msg, true);
   }
 }
 
