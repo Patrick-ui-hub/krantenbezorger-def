@@ -1814,39 +1814,57 @@ function toggleTheme() {
 
 /* ── Zaklamp (torch) ── */
 let _zaklampStream = null;
+let _zaklampVideo  = null;
+
 async function toggleZaklamp() {
   const btn = document.getElementById('zakLampBtn');
   try {
     if (_zaklampStream) {
       _zaklampStream.getTracks().forEach(t => t.stop());
       _zaklampStream = null;
+      if (_zaklampVideo) { _zaklampVideo.remove(); _zaklampVideo = null; }
       btn.classList.remove('active');
       return;
     }
-    /* Geen 'exact' — te streng voor telefoons met meerdere achterste camera's */
+
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment' }
     });
     _zaklampStream = stream;
+
+    /* Android Chrome vereist dat de stream wordt afgespeeld via een
+       video-element voordat applyConstraints({ torch }) werkt */
+    const vid = document.createElement('video');
+    vid.srcObject   = stream;
+    vid.playsInline = true;
+    vid.muted       = true;
+    vid.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:0;left:0;';
+    document.body.appendChild(vid);
+    _zaklampVideo = vid;
+    await vid.play();
+
+    /* wacht tot de camera echt actief is */
+    await new Promise(r => setTimeout(r, 500));
+
     const track = stream.getVideoTracks()[0];
-    /* wacht tot camera echt actief is */
-    await new Promise(r => setTimeout(r, 400));
-    /* probeer torch aan te zetten; sommige browsers/drivers accepteren
-       alleen de ene of de andere vorm */
     let aan = false;
     try { await track.applyConstraints({ advanced: [{ torch: true }] }); aan = true; } catch(_) {}
     if (!aan) {
       try { await track.applyConstraints({ torch: true }); aan = true; } catch(_) {}
     }
+
     if (!aan) {
       stream.getTracks().forEach(t => t.stop());
       _zaklampStream = null;
+      vid.remove(); _zaklampVideo = null;
       toon('Zaklamp niet ondersteund door deze browser', true);
       return;
     }
     btn.classList.add('active');
+
   } catch(e) {
     if (_zaklampStream) { _zaklampStream.getTracks().forEach(t => t.stop()); _zaklampStream = null; }
+    if (_zaklampVideo)  { _zaklampVideo.remove(); _zaklampVideo = null; }
     btn.classList.remove('active');
     toon(e?.name === 'NotAllowedError'
       ? 'Camera-toestemming geweigerd — sta toe in browserinstellingen'
