@@ -1823,23 +1823,34 @@ async function toggleZaklamp() {
       btn.classList.remove('active');
       return;
     }
-    /* exact: 'environment' dwingt achterste camera af (vereist voor torch) */
+    /* Geen 'exact' — te streng voor telefoons met meerdere achterste camera's */
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { exact: 'environment' } }
+      video: { facingMode: 'environment' }
     });
     _zaklampStream = stream;
     const track = stream.getVideoTracks()[0];
-    /* kleine pauze zodat de camera tijd heeft om op te starten */
-    await new Promise(r => setTimeout(r, 250));
-    await track.applyConstraints({ advanced: [{ torch: true }] });
+    /* wacht tot camera echt actief is */
+    await new Promise(r => setTimeout(r, 400));
+    /* probeer torch aan te zetten; sommige browsers/drivers accepteren
+       alleen de ene of de andere vorm */
+    let aan = false;
+    try { await track.applyConstraints({ advanced: [{ torch: true }] }); aan = true; } catch(_) {}
+    if (!aan) {
+      try { await track.applyConstraints({ torch: true }); aan = true; } catch(_) {}
+    }
+    if (!aan) {
+      stream.getTracks().forEach(t => t.stop());
+      _zaklampStream = null;
+      toon('Zaklamp niet ondersteund door deze browser', true);
+      return;
+    }
     btn.classList.add('active');
   } catch(e) {
     if (_zaklampStream) { _zaklampStream.getTracks().forEach(t => t.stop()); _zaklampStream = null; }
     btn.classList.remove('active');
-    const msg = (e && e.name === 'NotAllowedError')
+    toon(e?.name === 'NotAllowedError'
       ? 'Camera-toestemming geweigerd — sta toe in browserinstellingen'
-      : 'Zaklamp werkt niet op dit apparaat of in deze browser';
-    toon(msg, true);
+      : 'Zaklamp werkt niet — controleer camera-toestemming', true);
   }
 }
 
