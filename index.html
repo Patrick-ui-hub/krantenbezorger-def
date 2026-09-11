@@ -564,11 +564,16 @@ body {
   .icon-btn { width: 26px; height: 26px; font-size: 12px; }
   .header-right { gap: 3px; }
 
-  /* Weerstrip in landscape: iets compacter */
-  .wx-strip { flex-wrap: wrap; gap: 4px 0; }
-  .wx-strip.toon { max-height: 160px; padding-top: 6px; padding-bottom: 4px; }
-  .wx-item { font-size: 11px; padding-right: 10px; line-height: 1.45; }
-  .wx-item b { font-size: 13px; }
+  /* Weerstrip in landscape: altijd precies 2 regels */
+  .wx-strip { flex-wrap: wrap; gap: 2px 0; }
+  .wx-strip.toon {
+    max-height: 46px;    /* 2 × ~16px rij + 6+4px padding = past altijd in 2 regels */
+    overflow: hidden;
+    padding-top: 5px;
+    padding-bottom: 3px;
+  }
+  .wx-item { font-size: 11px; padding-right: 10px; line-height: 1.5; }
+  .wx-item b { font-size: 12px; }
 
   /* Krant-chips: wrap zodat ze niet scrollen */
   .krant-summary { flex-wrap: wrap; gap: 4px; overflow-x: visible; margin-top: 2px; }
@@ -643,20 +648,23 @@ body {
   .addr-row { padding: 7px 14px; gap: 9px; }
   .house-nr { font-size: 17px; }
 
-  /* Tab-bar: vaste positie onderin, volle breedte */
+  /* Tab-bar: vaste positie onderin, volle breedte, zonder tekstlabels */
   .tab-bar {
     position: fixed;
     bottom: 0; left: 0;
     width: 100%; max-width: 100%;
     transform: none;
-    height: 46px;
+    height: 36px;       /* lager zonder tekstlabels */
     z-index: 20;
   }
-  .tab-btn { font-size: 9px; }
-  .tab-icon { font-size: 17px; }
+  .tab-btn { font-size: 0; }       /* verberg tekst onder icoontjes */
+  .tab-icon { font-size: 18px; }
+
+  /* Linker paneel: ruimte vrijhouden voor tab-bar onderaan */
+  .ls-left { padding-bottom: 36px; }
 
   /* Toast: iets hoger vanwege compactere tab-bar */
-  .toast { bottom: 56px; }
+  .toast { bottom: 44px; }
 }
 
 /* ── Undo button disabled state ── */
@@ -1817,14 +1825,20 @@ async function toggleZaklamp() {
       return;
     }
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    _zaklampStream = stream;
     const track = stream.getVideoTracks()[0];
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    if (!caps.torch) {
+      stream.getTracks().forEach(t => t.stop());
+      toon('Zaklamp niet ondersteund door deze browser/telefoon', true);
+      return;
+    }
+    _zaklampStream = stream;
     await track.applyConstraints({ advanced: [{ torch: true }] });
     btn.classList.add('active');
   } catch(e) {
-    _zaklampStream = null;
+    if (_zaklampStream) { _zaklampStream.getTracks().forEach(t => t.stop()); _zaklampStream = null; }
     btn.classList.remove('active');
-    toon('Zaklamp niet beschikbaar op dit apparaat', true);
+    toon('Zaklamp niet beschikbaar — controleer camera-toestemming', true);
   }
 }
 
