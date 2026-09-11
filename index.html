@@ -90,6 +90,10 @@ body {
   gap: 7px;
 }
 .header-right { display: flex; align-items: center; gap: 7px; }
+.app-naam-lang { display: inline; } /* portret: lange naam zichtbaar */
+.app-naam-kort { display: none; }   /* portret: korte naam verborgen */
+#zakLampBtn { display: none; }      /* portret: zaklamp-knop verborgen */
+#zakLampBtn.active { color: var(--accent); }
 .countdown {
   font-family: var(--font-mono); font-size: 13px; font-weight: 600;
   color: var(--text-2); letter-spacing: .03em;
@@ -542,21 +546,23 @@ body {
     background: var(--surface);
     border-right: 1px solid var(--border);
     height: 100dvh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    overflow: hidden;          /* vast — geen scroll */
   }
 
-  /* Header hoeft niet meer sticky te zijn — het paneel scollt zelf */
+  /* Header: compact, niet sticky */
   .app-header {
     position: static;
-    padding: 10px 14px 8px;
+    padding: 6px 10px 5px;
     border-bottom: 1px solid var(--border-faint);
+    flex-shrink: 0;
   }
-  .header-top { margin-bottom: 6px; }
+  .header-top { margin-bottom: 4px; }
   .app-name { font-size: 12px; }
-  .countdown { font-size: 17px; }
-  .icon-btn { width: 28px; height: 28px; font-size: 13px; }
-  .header-right { gap: 5px; }
+  .app-naam-lang { display: none; }   /* verberg lange naam in landscape */
+  .app-naam-kort { display: inline; } /* toon korte naam KB */
+  .countdown { font-size: 12px; }     /* klok kleiner */
+  .icon-btn { width: 26px; height: 26px; font-size: 12px; }
+  .header-right { gap: 3px; }
 
   /* Weerstrip in landscape: iets compacter */
   .wx-strip { flex-wrap: wrap; gap: 4px 0; }
@@ -572,6 +578,9 @@ body {
   /* Progress bar: iets minder ruimte */
   .progress-bar-wrap { margin-top: 6px; }
 
+  /* Zaklamp-knop: zichtbaar in landscape */
+  #zakLampBtn { display: flex; }
+
   /* Modus-rij in het linker paneel: altijd zichtbaar, knoppen gestapeld */
   .modus-row {
     display: flex !important; /* override JS switchTab hide */
@@ -579,11 +588,11 @@ body {
     flex-direction: column;
     border-bottom: none;
     border-top: 1px solid var(--border);
-    padding: 6px 0;
+    padding: 4px 0;
     flex-shrink: 0;
   }
   .modus-tab {
-    padding: 10px 14px;
+    padding: 8px 10px;
     text-align: left;
     border-bottom: none;
     border-left: 3px solid transparent;
@@ -655,20 +664,50 @@ body {
 
 /* ── Swipe-to-deliver ── */
 .addr-row {
-  /* add transition for snap-back after swipe release */
   transition: background .12s, transform .18s ease;
 }
 .addr-row.swiping {
-  transition: background .05s; /* snappier feedback during swipe */
+  transition: background .05s;
 }
-.addr-row.swipe-done {
-  /* briefly flash green on successful swipe-right */
-  background: var(--ok-dim) !important;
+/* Swipe-right: rij kleurt groen, schuift dan omhoog weg */
+.addr-row.swipe-bezorgd {
+  background: var(--ok) !important;
+  color: #fff;
+  overflow: hidden;
+  pointer-events: none;
+  /* fase 1: groen flitsen — daarna (delay) schuift de rij weg */
+  transition:
+    background .15s ease,
+    max-height .35s cubic-bezier(.4,0,.2,1) .2s,
+    padding-top .35s ease .2s,
+    padding-bottom .35s ease .2s,
+    border-bottom-width .32s ease .2s,
+    opacity .25s ease .15s;
+}
+.addr-row.swipe-bezorgd.swipe-collapse {
+  max-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-bottom-width: 0 !important;
+  opacity: 0 !important;
 }
 .addr-row.swipe-undo {
-  /* briefly flash red on swipe-left undo */
   background: var(--danger-dim) !important;
 }
+
+/* ── Google Maps knop ── */
+.maps-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+  border: 1px solid var(--border); color: var(--text-3);
+  font-size: 13px; text-decoration: none;
+  transition: border-color .15s, color .15s, background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.maps-btn:hover, .maps-btn:active {
+  border-color: var(--accent); color: var(--accent); background: var(--accent-dim);
+}
+.addr-row.bezorgd .maps-btn { opacity: .4; }
 /* Swipe hint icons shown at edges during swipe */
 .addr-row::before, .addr-row::after {
   position: absolute; top: 50%; transform: translateY(-50%);
@@ -685,10 +724,11 @@ body {
 <!-- ── Header ── -->
 <header class="app-header" id="appHeader">
   <div class="header-top">
-    <div class="app-name"><span>📰</span>Krantenbezorger</div>
+    <div class="app-name"><span>📰</span><span class="app-naam-lang">Krantenbezorger</span><span class="app-naam-kort">KB</span></div>
     <div class="header-right">
       <span class="countdown" id="clock"></span>
       <button class="icon-btn" id="undoBtn" disabled title="Ongedaan maken (↩)" onclick="undoLaatste()">↩</button>
+      <button class="icon-btn" id="zakLampBtn" title="Zaklamp aan/uit" onclick="toggleZaklamp()">🔦</button>
       <button class="icon-btn" id="wakeLockBtn" title="Scherm aan houden" onclick="toggleWakeLock()">☀</button>
       <button class="icon-btn" title="Thema wisselen" onclick="toggleTheme()">◑</button>
     </div>
@@ -1119,7 +1159,7 @@ function parseCSV(tekst) {
       lng: isNaN(lng) ? null : lng,
       bezorgd: false, afstand: null,
     };
-  }).filter(a => a.nr && a.straat && a.kranten.length > 0);
+  }).filter(a => a.nr && a.straat);
 }
 
 // ── Import / Export / Deel ────────────────────────────────────────────────────
@@ -1332,6 +1372,9 @@ function render() {
     const notitie = a.notitie
       ? `<div class="addr-note"><span class="addr-note-icon">⚑</span>${a.notitie}</div>`
       : '';
+    const mapsUrl = (a.lat != null && a.lng != null)
+      ? `https://www.google.com/maps?q=${a.lat},${a.lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.nr+' '+a.straat)}`;
     return `<div class="addr-row${a.bezorgd?' bezorgd':''}${toonWEBadge&&isWE?' is-weekend':''}" data-id="${a.id}" ontouchstart="startSwipe(event,${a.id})">
       <div class="drag-handle" ontouchstart="startDrag(event,${a.id})">⋮⋮</div>
       <div class="check-box">${a.bezorgd ? '✓' : ''}</div>
@@ -1343,6 +1386,8 @@ function render() {
         <div class="badge-row">${badges}${weBadge}</div>
         ${notitie}${coords}
       </div>${dist}
+      <a class="maps-btn" href="${mapsUrl}" target="_blank" rel="noopener"
+         ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" title="Open in Google Maps">📍</a>
       <button class="del-btn" onclick="verwijderAdres(${a.id},event)">×</button>
     </div>`;
   };
@@ -1487,7 +1532,7 @@ function startSwipe(e, id) {
   // In bewerkmodus werkt alleen de drag-handle, geen swipe
   if (state.bewerken) return;
   // Negeer aanraking op interactieve sub-elementen
-  if (e.target.closest('.drag-handle') || e.target.closest('.del-btn') || e.target.closest('button')) return;
+  if (e.target.closest('.drag-handle') || e.target.closest('.del-btn') || e.target.closest('.maps-btn') || e.target.closest('button')) return;
   const touch = e.touches[0];
   _swipe = {
     id,
@@ -1595,12 +1640,15 @@ document.addEventListener('touchend', () => {
       const a = state.adressen.find(x => x.id === id);
       if (a) {
         if (dx > 50 && !a.bezorgd) {
-          // Swipe rechts → bezorgd
-          el.classList.add('swipe-done');
-          setTimeout(() => el.classList.remove('swipe-done'), 350);
-          doBezorgd(id, true);
+          // Swipe rechts → bezorgd: groen kleuren, dan omhoog wegglijden
+          el.style.maxHeight = el.offsetHeight + 'px';
+          el.classList.add('swipe-bezorgd');
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            el.classList.add('swipe-collapse');
+          }));
+          setTimeout(() => doBezorgd(id, true), 580);
         } else if (dx < -50 && a.bezorgd) {
-          // Swipe links → ongedaan
+          // Swipe links → ongedaan: kort rood flitsen
           el.classList.add('swipe-undo');
           setTimeout(() => el.classList.remove('swipe-undo'), 350);
           doBezorgd(id, false);
@@ -1755,6 +1803,29 @@ function toggleTheme() {
   const root = document.documentElement;
   if (state.thema) { root.setAttribute('data-theme', state.thema); try { localStorage.setItem('kb_thema', state.thema); } catch(e) {} }
   else { root.removeAttribute('data-theme'); try { localStorage.removeItem('kb_thema'); } catch(e) {} }
+}
+
+/* ── Zaklamp (torch) ── */
+let _zaklampStream = null;
+async function toggleZaklamp() {
+  const btn = document.getElementById('zakLampBtn');
+  try {
+    if (_zaklampStream) {
+      _zaklampStream.getTracks().forEach(t => t.stop());
+      _zaklampStream = null;
+      btn.classList.remove('active');
+      return;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    _zaklampStream = stream;
+    const track = stream.getVideoTracks()[0];
+    await track.applyConstraints({ advanced: [{ torch: true }] });
+    btn.classList.add('active');
+  } catch(e) {
+    _zaklampStream = null;
+    btn.classList.remove('active');
+    toon('Zaklamp niet beschikbaar op dit apparaat', true);
+  }
 }
 
 function resetRoute() {
