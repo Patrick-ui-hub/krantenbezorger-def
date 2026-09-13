@@ -4,15 +4,18 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#f09a1f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 
 <style>
 :root {
-  --bg:             #141210;
-  --surface:        #1e1b15;
-  --surface-raised: #272419;
-  --border:         #343020;
-  --border-faint:   #29261c;
+  --bg:             #1e1e22;  /* antraciet — contrasterend met zwart telefoonscherm */
+  --surface:        #28282e;
+  --surface-raised: #323238;
+  --border:         #424248;
+  --border-faint:   #35353b;
   --accent:         #f09a1f;
   --accent-dim:     rgba(240,154,31,.13);
   --text-1:         #ede5cf;
@@ -36,8 +39,8 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #141210; --surface: #1e1b15; --surface-raised: #272419;
-  --border: #343020; --border-faint: #29261c;
+  --bg: #1e1e22; --surface: #28282e; --surface-raised: #323238;
+  --border: #424248; --border-faint: #35353b;
   --accent: #f09a1f; --accent-dim: rgba(240,154,31,.13);
   --text-1: #ede5cf; --text-2: #8c8070; --text-3: #4d4840;
   --ok: #47a876; --ok-dim: rgba(71,168,118,.12);
@@ -1096,6 +1099,11 @@ let _standaardRouteGeladen = false;
     if (savedModus) { state.modus = savedModus; state.modusHandmatig = true; }
   } catch(e) {}
 })();
+
+// ── Service worker (PWA-installatie) ──────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 
 // ── Persistentie ──────────────────────────────────────────────────────────────
 function slaVoortgangOp() {
