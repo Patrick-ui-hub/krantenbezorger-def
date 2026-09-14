@@ -138,6 +138,10 @@ body {
 .krant-code { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text-2); letter-spacing: .04em; }
 .krant-count { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--text-1); font-variant-numeric: tabular-nums; }
 .krant-chip.all-done .krant-count { color: var(--ok); }
+.krant-chip.has-extra { border-color: var(--accent); background: var(--accent-dim); }
+.krant-extra { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--accent); margin-left: 3px; }
+.invoer-extra-label { font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--text-3); flex-shrink: 0; padding: 0 1px; }
+.invoer-input-extra { width: 42px !important; }
 .progress-bar-wrap { height: 2px; background: var(--border-faint); margin-top: 10px; border-radius: 2px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s ease; }
 
@@ -722,6 +726,35 @@ body {
 .addr-row { position: relative; }
 .addr-row.swiping-right::before { content: '✓'; left: 10px; opacity: 1; color: var(--ok); }
 .addr-row.swiping-left::after  { content: '↩'; right: 10px; opacity: 1; color: var(--danger); }
+
+/* ── Straat-sectie labels (bulk-afvinken via long-press) ── */
+.street-label {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .12s, color .12s;
+}
+.street-label:active { background: var(--accent-dim); }
+.street-label.pressing { background: var(--accent-dim) !important; color: var(--accent) !important; }
+.street-label-count { font-family: var(--font-mono); font-size: 9px; color: var(--text-3); font-weight: 400; letter-spacing: 0; text-transform: none; margin-left: 4px; }
+.street-label-hint { font-size: 10px; color: var(--text-3); font-weight: 400; letter-spacing: 0; text-transform: none; margin-left: auto; padding-left: 8px; }
+
+/* ── Rondetijd op Klaar!-scherm ── */
+.rondetijd-display { font-family: var(--font-mono); font-size: 15px; color: var(--text-2); }
+.rondetijd-display b { color: var(--ok); }
+.rondes-history { margin-top: 10px; width: 100%; max-width: 280px; border: 1px solid var(--border-faint); border-radius: 10px; overflow: hidden; }
+.rondes-history-titel { font-family: var(--font-mono); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: var(--text-3); padding: 6px 12px 4px; border-bottom: 1px solid var(--border-faint); }
+.rondes-history-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 12px; border-bottom: 1px solid var(--border-faint); font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+.rondes-history-row:last-child { border-bottom: none; }
+.rh-datum { color: var(--text-3); }
+.rh-duur { color: var(--text-1); font-weight: 600; }
+
+/* ── Dagnotitie ── */
+.dagnotitie-wrap { margin-top: 20px; }
+.dagnotitie-label { display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: var(--text-3); margin-bottom: 6px; }
+.dagnotitie-input { display: block; width: 100%; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 10px; padding: 10px 13px; font-family: var(--font-sans); font-size: 14px; color: var(--text-1); outline: none; resize: none; min-height: 70px; max-height: 160px; transition: border-color .15s; line-height: 1.5; }
+.dagnotitie-input:focus { border-color: var(--accent); }
+.dagnotitie-input::placeholder { color: var(--text-3); }
 </style>
 
 <!-- ── Linker paneel (landscape: stationair) ── -->
@@ -780,6 +813,8 @@ body {
     <div class="all-done-icon">🎉</div>
     <div class="all-done-title">Klaar!</div>
     <div class="all-done-sub">Alle kranten bezorgd. Goed gedaan!</div>
+    <div class="rondetijd-display" id="allDoneRondetijd"></div>
+    <div id="allDoneHistory"></div>
     <button class="all-done-btn" onclick="resetRoute()">↺ Nieuwe ronde</button>
   </div>
 </div>
@@ -787,8 +822,12 @@ body {
 <!-- ── Invoer tab ── -->
 <div class="invoer-screen" id="invoerScreen">
   <div class="screen-heading">Dagelijkse invoer</div>
-  <div class="screen-sub">Vul het werkelijk bezorgde aantal in per krant. De routetelling staat rechts als referentie.</div>
+  <div class="screen-sub">Vul het bezorgde aantal in per krant. De routetelling staat rechts als referentie. Gebruik het <b>+</b>-veld voor extra meegekregen kranten (bijv. +1 als je er 1 te veel ontvangen hebt — de chip blijft oranje zolang die over zijn).</div>
   <div id="invoerRows"></div>
+  <div class="dagnotitie-wrap">
+    <label class="dagnotitie-label" for="dagNotitie">Notitie van vandaag</label>
+    <textarea class="dagnotitie-input" id="dagNotitie" placeholder="Bijzonderheden voor vandaag… (fiets band lek, hond bij nr 7 weg, etc.)"></textarea>
+  </div>
   <button class="invoer-save" onclick="saveInvoer()">Opslaan</button>
 </div>
 
@@ -1040,6 +1079,29 @@ function berekenAfstand(lat1, lng1, lat2, lng2) {
 }
 function fmtAfstand(m) { return m < 1000 ? `${Math.round(m)} m` : `${(m/1000).toFixed(1)} km`; }
 
+function getExtras() {
+  try { return JSON.parse(localStorage.getItem('kb_extra') || '{}'); } catch(e) { return {}; }
+}
+
+function fmtDuur(secs) {
+  const u = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (u > 0) return `${u}u ${String(m).padStart(2,'0')}m`;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function slaRondeOp(aantalAdr) {
+  const duur = Math.floor((Date.now() - state.rondeStart) / 1000);
+  if (duur < 30) return; // te kort om op te slaan (bijv. demo-klik)
+  const datum = new Date().toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit' });
+  let rondes = [];
+  try { rondes = JSON.parse(localStorage.getItem('kb_rondes') || '[]'); } catch(e) {}
+  rondes.unshift({ datum, duur, aantal: aantalAdr });
+  if (rondes.length > 7) rondes.length = 7;
+  try { localStorage.setItem('kb_rondes', JSON.stringify(rondes)); } catch(e) {}
+}
+
 function totalen(adressenlijst) {
   const res = {};
   Object.keys(KRANTEN).forEach(k => { res[k] = { totaal: 0, resterend: 0 }; });
@@ -1065,6 +1127,9 @@ let state = {
   wakeLock: null,
   thema: null,
   timerDeadline: null,
+  rondeStart: null,    // timestamp eerste bezorging
+  rondeSaved: false,   // voorkomt dubbel opslaan
+  neerslagAlertGedaan: false, // neerslag-alert al getoond deze GPS-sessie
 };
 
 // ── Opgeslagen data herstellen ────────────────────────────────────────────────
@@ -1097,6 +1162,10 @@ let _standaardRouteGeladen = false;
 
     const savedModus = localStorage.getItem('kb_modus');
     if (savedModus) { state.modus = savedModus; state.modusHandmatig = true; }
+
+    // Herstel ronde-starttijd als die nog in de toekomst ligt (= ronde bezig)
+    const rs = parseInt(localStorage.getItem('kb_ronde_start') || '0', 10);
+    if (rs && rs < Date.now()) state.rondeStart = rs;
   } catch(e) {}
 })();
 
@@ -1247,6 +1316,11 @@ async function fetchWeer(lat, lng) {
     state.weerData = data.current;
     state.weerTijd = nu;
     renderWxStrip();
+    // Neerslag-alert (één keer per GPS-sessie)
+    if (!state.neerslagAlertGedaan && data.current.precipitation > 0.5) {
+      state.neerslagAlertGedaan = true;
+      setTimeout(() => toon(`🌧 Neerslag verwacht: ${data.current.precipitation.toFixed(1)} mm — regenjas meenemen!`, false, 4500), 600);
+    }
   } catch(e) {}
 }
 
@@ -1312,13 +1386,17 @@ function render() {
   document.getElementById('progressBar').style.width = pct + '%';
 
   // Krant chips
+  const _extras = getExtras();
   document.getElementById('krantSummary').innerHTML = Object.entries(KRANTEN).map(([code, info]) => {
     const { resterend, totaal } = t[code];
     if (!totaal) return '';
-    return `<div class="krant-chip${resterend===0?' all-done':''}">
+    const extra = parseInt(_extras[code] || '0', 10) || 0;
+    const allDone = resterend === 0;
+    const heeftExtra = allDone && extra > 0;
+    return `<div class="krant-chip${allDone && !heeftExtra ? ' all-done' : heeftExtra ? ' has-extra' : ''}">
       <div class="krant-dot" style="background:${info.kleur}"></div>
       <span class="krant-code">${code}</span>
-      <span class="krant-count">${resterend}</span>
+      <span class="krant-count">${resterend}</span>${heeftExtra ? `<span class="krant-extra">+${extra}</span>` : ''}
     </div>`;
   }).join('');
 
@@ -1409,19 +1487,68 @@ function render() {
     ? [...arr].sort((a,b) => (a.afstand??9e9)-(b.afstand??9e9))
     : arr;
 
+  // Rondetijd afsluiten als alle adressen bezorgd zijn
+  if (rest === 0 && totaalAdr > 0 && state.rondeStart && !state.rondeSaved) {
+    state.rondeSaved = true;
+    slaRondeOp(totaalAdr);
+  }
+
   // All-done bericht alleen in "Te doen" als er niets meer te doen is
   if (state.filter === 'todo' && rest === 0 && totaalAdr > 0) {
     listEl.innerHTML = '';
     allDoneEl.classList.add('show');
+    // Rondetijd weergeven
+    const rdEl = document.getElementById('allDoneRondetijd');
+    if (rdEl) {
+      if (state.rondeStart) {
+        const duurSec = Math.floor((Date.now() - state.rondeStart) / 1000);
+        rdEl.innerHTML = `Rondetijd: <b>${fmtDuur(duurSec)}</b>`;
+      } else { rdEl.innerHTML = ''; }
+    }
+    // Historiek van vorige rondes
+    const histEl = document.getElementById('allDoneHistory');
+    if (histEl) {
+      let rondes = [];
+      try { rondes = JSON.parse(localStorage.getItem('kb_rondes') || '[]'); } catch(e) {}
+      const vorige = rondes.slice(1, 6); // sla huidige ronde over (index 0)
+      if (vorige.length) {
+        histEl.innerHTML = `<div class="rondes-history">
+          <div class="rondes-history-titel">Vorige rondes</div>
+          ${vorige.map(r => `<div class="rondes-history-row">
+            <span class="rh-datum">${r.datum}</span>
+            <span class="rh-duur">${fmtDuur(r.duur)}</span>
+            <span>${r.aantal} adr.</span>
+          </div>`).join('')}
+        </div>`;
+      } else { histEl.innerHTML = ''; }
+    }
   } else {
     allDoneEl.classList.remove('show');
+    // Straat-labels tonen als niet in GPS-sorteer- of bewerkstand
+    const toonStraatLabels = !state.gpsSort && !state.bewerken;
+
+    function bouwLijstMetStraatLabels(lijst) {
+      let h = '', vorigeStraat = null;
+      lijst.forEach(a => {
+        if (a.straat !== vorigeStraat) {
+          const straatAdr = huidig.filter(x => x.straat === a.straat);
+          h += geefStraatLabel(a.straat, straatAdr);
+          vorigeStraat = a.straat;
+        }
+        h += geefRij(a);
+      });
+      return h;
+    }
+
     let html = '';
     if (state.filter === 'todo') {
-      html = sorteerOp(todoLijst).map(geefRij).join('');
+      const gesorteerd = sorteerOp(todoLijst);
+      html = toonStraatLabels ? bouwLijstMetStraatLabels(gesorteerd) : gesorteerd.map(geefRij).join('');
     } else if (state.filter === 'done') {
       html = doneLijst.map(geefRij).join('');
     } else { // 'all'
-      html = sorteerOp(todoLijst).map(geefRij).join('');
+      const gesorteerd = sorteerOp(todoLijst);
+      html = toonStraatLabels ? bouwLijstMetStraatLabels(gesorteerd) : gesorteerd.map(geefRij).join('');
       if (doneLijst.length) {
         html += `<div class="section-label">Bezorgd (${doneLijst.length})</div>`;
         html += doneLijst.map(geefRij).join('');
@@ -1437,13 +1564,16 @@ function render() {
   document.getElementById('invoerRows').innerHTML = Object.entries(KRANTEN).map(([code, info]) => {
     const ref = t[code].totaal;
     if (!ref) return '';
-    let opg = '';
+    let opg = '', ext = '';
     try { opg = JSON.parse(localStorage.getItem('kb_invoer')||'{}')[code]||''; } catch(e) {}
+    try { ext = JSON.parse(localStorage.getItem('kb_extra')||'{}')[code]||''; } catch(e) {}
     return `<div class="invoer-row">
       <span class="invoer-badge" style="background:${info.kleur}">${code}</span>
       <span class="invoer-name">${info.naam}</span>
       <span class="invoer-ref">${ref}×</span>
       <input class="invoer-input" type="number" min="0" max="999" id="inv_${code}" value="${opg}" placeholder="${ref}">
+      <span class="invoer-extra-label" title="Extra meegekregen boven de routetelling">+</span>
+      <input class="invoer-input invoer-input-extra" type="number" min="0" max="99" id="ext_${code}" value="${ext}" placeholder="0" title="Extra meegekregen — bijv. 1 als je er 1 te veel hebt ontvangen">
     </div>`;
   }).join('');
 
@@ -1460,6 +1590,69 @@ function render() {
   }
 }
 
+// ── Straat-sectie label (bulk-afvinken via long-press) ───────────────────────
+let _straatLongPress = null;
+
+function geefStraatLabel(straat, alleAdrInStraat) {
+  const restAdr = alleAdrInStraat.filter(a => !a.bezorgd).length;
+  return `<div class="section-label street-label"
+    ontouchstart="startStraatLongPress(event,'${CSS.escape(straat)}')"
+    ontouchend="stopStraatLongPress(event,'${CSS.escape(straat)}')"
+    ontouchcancel="cancelStraatLongPress()"
+    onmousedown="startStraatLongPress(event,'${CSS.escape(straat)}')"
+    onmouseup="stopStraatLongPress(event,'${CSS.escape(straat)}')"
+    onmouseleave="cancelStraatLongPress()"
+    title="Lang indrukken om alle adressen in ${straat} in één keer af te vinken">
+    ${straat}<span class="street-label-count">${restAdr > 0 ? ` (${restAdr})` : ' ✓'}</span>
+    <span class="street-label-hint">⟵ ingedrukt houden</span>
+  </div>`;
+}
+
+function startStraatLongPress(e, straat) {
+  e.stopPropagation();
+  const el = e.currentTarget;
+  el.classList.add('pressing');
+  _straatLongPress = setTimeout(() => {
+    _straatLongPress = null;
+    el.classList.remove('pressing');
+    bulkBezorgStraat(straat);
+  }, 650);
+}
+function stopStraatLongPress(e, straat) {
+  if (_straatLongPress) {
+    clearTimeout(_straatLongPress);
+    _straatLongPress = null;
+    if (e && e.currentTarget) e.currentTarget.classList.remove('pressing');
+  }
+}
+function cancelStraatLongPress() {
+  if (_straatLongPress) {
+    clearTimeout(_straatLongPress);
+    _straatLongPress = null;
+  }
+  document.querySelectorAll('.street-label.pressing').forEach(el => el.classList.remove('pressing'));
+}
+
+function bulkBezorgStraat(straat) {
+  const huidig = adressenInModus(state.modus);
+  const teMarkeren = huidig.filter(a => !a.bezorgd && a.straat === straat);
+  if (!teMarkeren.length) { toon(`Alle adressen in ${straat} al bezorgd`); return; }
+  teMarkeren.forEach(a => {
+    _undoStack.push({ id: a.id, bezorgd: false });
+    a.bezorgd = true;
+  });
+  while (_undoStack.length > UNDO_MAX) _undoStack.shift();
+  // Start ronde timer als nog niet gestart
+  if (!state.rondeStart) {
+    state.rondeStart = Date.now();
+    try { localStorage.setItem('kb_ronde_start', state.rondeStart); } catch(e) {}
+  }
+  slaVoortgangOp();
+  render();
+  updateUndoBtn();
+  toon(`✓ ${teMarkeren.length}× ${straat} bezorgd`);
+}
+
 // ── Undo stack ────────────────────────────────────────────────────────────────
 const _undoStack = []; // [{ id, bezorgd }] — vorige toestand per actie
 const UNDO_MAX   = 20;
@@ -1470,6 +1663,11 @@ function doBezorgd(id, bezorgd) {
   _undoStack.push({ id, bezorgd: a.bezorgd }); // sla vorige toestand op
   if (_undoStack.length > UNDO_MAX) _undoStack.shift();
   a.bezorgd = bezorgd;
+  // Start ronde timer bij eerste bezorging
+  if (bezorgd && !state.rondeStart) {
+    state.rondeStart = Date.now();
+    try { localStorage.setItem('kb_ronde_start', state.rondeStart); } catch(e) {}
+  }
   slaVoortgangOp();
   render();
   updateUndoBtn();
@@ -1747,6 +1945,7 @@ function requestGPS() {
     state.posLive   = null;
     state.weerData  = null; // strip leegmaken zodat er geen verouderde data blijft staan
     state.weerTijd  = 0;
+    state.neerslagAlertGedaan = false;
     btn.classList.remove('active');
     render();
     renderWxStrip(); // strip direct bijwerken (verbergt hem nu posLive en weerData leeg zijn)
@@ -1824,7 +2023,14 @@ function resetRoute() {
   state.bewerken  = false;
   state.modus = isWeekend() ? 'weekend' : 'weekdag';
   state.modusHandmatig = false;
-  try { localStorage.removeItem('kb_voortgang'); localStorage.removeItem('kb_modus'); } catch(e) {}
+  state.rondeStart = null;
+  state.rondeSaved = false;
+  state.neerslagAlertGedaan = false;
+  try {
+    localStorage.removeItem('kb_voortgang');
+    localStorage.removeItem('kb_modus');
+    localStorage.removeItem('kb_ronde_start');
+  } catch(e) {}
   _undoStack.length = 0;
   updateUndoBtn();
   document.getElementById('gpsBtn').classList.remove('active');
@@ -1842,9 +2048,24 @@ function deadlineVandaag() {
 }
 
 function saveInvoer() {
-  const data = {};
-  Object.keys(KRANTEN).forEach(k => { const el = document.getElementById('inv_'+k); if (el) data[k] = el.value; });
+  const data = {}, extraData = {};
+  Object.keys(KRANTEN).forEach(k => {
+    const el  = document.getElementById('inv_'+k); if (el)  data[k]      = el.value;
+    const ext = document.getElementById('ext_'+k); if (ext) extraData[k] = ext.value;
+  });
   try { localStorage.setItem('kb_invoer', JSON.stringify(data)); } catch(e) {}
+  try { localStorage.setItem('kb_extra',  JSON.stringify(extraData)); } catch(e) {}
+  // Dagnotitie opslaan
+  try {
+    const vandaag = new Date().toISOString().slice(0,10);
+    const notities = JSON.parse(localStorage.getItem('kb_dagnotitie') || '{}');
+    const dagNotitieEl = document.getElementById('dagNotitie');
+    notities[vandaag] = dagNotitieEl ? dagNotitieEl.value.trim() : '';
+    // Bewaar maximaal 30 dagen
+    const keys = Object.keys(notities).sort();
+    while (keys.length > 30) { delete notities[keys.shift()]; }
+    localStorage.setItem('kb_dagnotitie', JSON.stringify(notities));
+  } catch(e) {}
   // Start afteltimer
   const dl = deadlineVandaag();
   try { localStorage.setItem('kb_timer_dl', dl); } catch(e) {}
@@ -1911,6 +2132,14 @@ try {
 updateTimer();
 setInterval(updateTimer, 1000);
 render();
+
+// Dagnotitie laden voor vandaag
+try {
+  const vandaag = new Date().toISOString().slice(0,10);
+  const notities = JSON.parse(localStorage.getItem('kb_dagnotitie') || '{}');
+  const dagNotitieEl = document.getElementById('dagNotitie');
+  if (dagNotitieEl && notities[vandaag]) dagNotitieEl.value = notities[vandaag];
+} catch(e) {}
 
 // Waarschuw de gebruiker als de standaardroute geladen werd (geen opgeslagen route gevonden)
 if (_standaardRouteGeladen) {
