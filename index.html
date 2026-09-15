@@ -444,7 +444,7 @@ body {
 
 /* ── All done ── */
 .all-done-msg { display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0 24px 16px; text-align: center; gap: 12px; overflow-y: auto; }
-.all-done-msg.show { display: flex; }
+.all-done-msg.show { display: flex; flex: 1; }
 .all-done-btn { margin-top: 8px; padding: 10px 24px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 10px; font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--text-1); cursor: pointer; }
 @media (orientation: landscape) {
   .all-done-msg { padding: 0 24px 10px; gap: 8px; }
@@ -1493,6 +1493,7 @@ function render() {
   // All-done bericht alleen in "Te doen" als er niets meer te doen is
   if (state.filter === 'todo' && rest === 0 && totaalAdr > 0) {
     listEl.innerHTML = '';
+    listEl.style.display = 'none';
     allDoneEl.classList.add('show');
     // Rondetijd weergeven
     const rdEl = document.getElementById('allDoneRondetijd');
@@ -1521,6 +1522,7 @@ function render() {
     }
   } else {
     allDoneEl.classList.remove('show');
+    listEl.style.display = '';
     // Straat-labels tonen als niet in GPS-sorteer- of bewerkstand
     const toonStraatLabels = !state.gpsSort && !state.bewerken;
 
