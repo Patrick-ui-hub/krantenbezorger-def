@@ -443,11 +443,11 @@ body {
 }
 
 /* ── All done ── */
-.all-done-msg { display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding: 16px 24px; text-align: center; gap: 12px; overflow-y: auto; }
+.all-done-msg { display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0 24px 16px; text-align: center; gap: 12px; overflow-y: auto; }
 .all-done-msg.show { display: flex; }
 .all-done-btn { margin-top: 8px; padding: 10px 24px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 10px; font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--text-1); cursor: pointer; }
 @media (orientation: landscape) {
-  .all-done-msg { padding: 10px 24px; gap: 8px; }
+  .all-done-msg { padding: 0 24px 10px; gap: 8px; }
 }
 
 /* ── Invoer tab ── */
@@ -740,7 +740,7 @@ body {
 .street-label-hint { font-size: 10px; color: var(--text-3); font-weight: 400; letter-spacing: 0; text-transform: none; margin-left: auto; padding-left: 8px; }
 
 /* ── Rondetijd op Klaar!-scherm ── */
-.rondetijd-display { font-family: var(--font-mono); font-size: 15px; color: var(--text-2); }
+.rondetijd-display { font-family: var(--font-mono); font-size: 15px; color: var(--text-2); margin-top: 10px; }
 .rondetijd-display b { color: var(--ok); }
 .rondes-history { margin-top: 10px; width: 100%; max-width: 280px; border: 1px solid var(--border-faint); border-radius: 10px; overflow: hidden; }
 .rondes-history-titel { font-family: var(--font-mono); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: var(--text-3); padding: 6px 12px 4px; border-bottom: 1px solid var(--border-faint); }
