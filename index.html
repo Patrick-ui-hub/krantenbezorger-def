@@ -443,16 +443,14 @@ body {
 }
 
 /* ── All done ── */
-.all-done-msg { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 56px 32px; text-align: center; gap: 14px; }
+.all-done-msg { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 32px; text-align: center; gap: 12px; }
 .all-done-msg.show { display: flex; }
-.all-done-icon { font-size: 52px; line-height: 1; }
-.all-done-title { font-family: var(--font-mono); font-size: 20px; font-weight: 600; color: var(--ok); }
+.all-done-title { font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--ok); }
 .all-done-sub { font-size: 14px; color: var(--text-2); line-height: 1.55; max-width: 260px; }
 .all-done-btn { margin-top: 8px; padding: 10px 24px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 10px; font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--text-1); cursor: pointer; }
 @media (orientation: landscape) {
-  .all-done-msg { justify-content: flex-start; overflow-y: auto; padding: 20px 24px; gap: 10px; }
-  .all-done-icon { font-size: 32px; }
-  .all-done-title { font-size: 17px; }
+  .all-done-msg { justify-content: flex-start; overflow-y: auto; padding: 16px 24px; gap: 8px; }
+  .all-done-title { font-size: 18px; }
 }
 
 /* ── Invoer tab ── */
@@ -815,8 +813,7 @@ body {
   </div>
   <div class="address-list" id="addressList"></div>
   <div class="all-done-msg" id="allDoneMsg">
-    <div class="all-done-icon">🎉</div>
-    <div class="all-done-title">Klaar!</div>
+    <div class="all-done-title">🎉 Klaar!</div>
     <div class="rondetijd-display" id="allDoneRondetijd"></div>
     <div class="all-done-sub">Alle kranten bezorgd. Goed gedaan!</div>
     <div id="allDoneHistory"></div>
