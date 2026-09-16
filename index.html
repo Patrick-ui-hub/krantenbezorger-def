@@ -1266,7 +1266,7 @@ function parseCSV(tekst) {
   let nrI=0, strI=1, krI=2, dagI=3, latI=4, lngI=5, notI=-1, naamI=-1, telI=-1;
   if (heeftHeader) {
     eersteRij.forEach((h,i) => {
-      if (['nr','huisnummer','nummer','hnr'].includes(h)) nrI=i;
+      if (['nr','huisnummer','hnr'].includes(h)) nrI=i;
       else if (['straat','straatnaam','adres','street'].includes(h)) strI=i;
       else if (['kranten','krant','codes','krantcodes'].includes(h)) krI=i;
       else if (['dag','type','route','frequentie','soort'].includes(h)) dagI=i;
