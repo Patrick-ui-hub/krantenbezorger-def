@@ -347,16 +347,19 @@ body {
 
 /* ── WhatsApp-knop ── */
 .wa-btn {
-  background: none; border: none;
-  font-size: 18px; line-height: 1;
-  cursor: pointer; flex-shrink: 0;
-  padding: 4px 2px;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+  background: none; border: 1px solid var(--border);
+  font-size: 16px; line-height: 1;
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  opacity: .75;
-  transition: opacity .15s;
   text-decoration: none;
+  transition: border-color .15s, background .15s;
 }
-.wa-btn:hover { opacity: 1; }
+.wa-btn:hover, .wa-btn:active {
+  border-color: #25d366; background: rgba(37,211,102,.12);
+}
+.addr-row.bezorgd .wa-btn { opacity: .4; }
 
 .dist-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); flex-shrink: 0; text-align: right; min-width: 38px; font-variant-numeric: tabular-nums; }
 
@@ -1538,7 +1541,7 @@ function render() {
     const naamHtml = a.naam
       ? `<div class="addr-naam">${a.naam}</div>`
       : '';
-    const waMsg = encodeURIComponent('\n\nMet vriendelijke groet,\nPatrick');
+    const waMsg = encodeURIComponent('Met vriendelijke groet,\nPatrick');
     const waBtn = a.tel
       ? `<a class="wa-btn" href="https://wa.me/${a.tel}?text=${waMsg}" target="_blank" rel="noopener"
            ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" title="WhatsApp ${a.naam||a.nr+' '+a.straat}">💬</a>`
@@ -1826,7 +1829,7 @@ function startSwipe(e, id) {
   // In bewerkmodus werkt alleen de drag-handle, geen swipe
   if (state.bewerken) return;
   // Negeer aanraking op interactieve sub-elementen
-  if (e.target.closest('.drag-handle') || e.target.closest('.del-btn') || e.target.closest('.maps-btn') || e.target.closest('button')) return;
+  if (e.target.closest('.drag-handle') || e.target.closest('.del-btn') || e.target.closest('.maps-btn') || e.target.closest('.wa-btn') || e.target.closest('button')) return;
   const touch = e.touches[0];
   _swipe = {
     id,
