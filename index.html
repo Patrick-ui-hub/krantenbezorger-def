@@ -1163,9 +1163,13 @@ let _standaardRouteGeladen = false;
     const savedModus = localStorage.getItem('kb_modus');
     if (savedModus) { state.modus = savedModus; state.modusHandmatig = true; }
 
-    // Herstel ronde-starttijd als die nog in de toekomst ligt (= ronde bezig)
+    // Herstel ronde-starttijd alleen als die van vandaag is (netto bezorgtijd = eerste t/m laatste swipe)
     const rs = parseInt(localStorage.getItem('kb_ronde_start') || '0', 10);
-    if (rs && rs < Date.now()) state.rondeStart = rs;
+    if (rs > 0) {
+      const vandaag = new Date().toDateString();
+      if (new Date(rs).toDateString() === vandaag) state.rondeStart = rs;
+      else localStorage.removeItem('kb_ronde_start'); // verouderd — opruimen
+    }
   } catch(e) {}
 })();
 
@@ -1503,7 +1507,7 @@ function render() {
     if (rdEl) {
       if (state.rondeStart) {
         const duurSec = Math.floor((Date.now() - state.rondeStart) / 1000);
-        rdEl.innerHTML = `Rondetijd: <b>${fmtDuur(duurSec)}</b>`;
+        rdEl.innerHTML = `Netto bezorgtijd: <b>${fmtDuur(duurSec)}</b>`;
       } else { rdEl.innerHTML = ''; }
     }
     // Historiek van vorige rondes
