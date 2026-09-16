@@ -338,6 +338,26 @@ body {
 .addr-note-icon { flex-shrink: 0; font-size: 10px; margin-top: 1px; opacity: .7; }
 .addr-row.bezorgd .addr-note { opacity: .4; }
 
+/* ── Abonneenaam ── */
+.addr-naam {
+  font-size: 11px; color: var(--text-2); margin-top: 3px;
+  font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.addr-row.bezorgd .addr-naam { opacity: .5; }
+
+/* ── WhatsApp-knop ── */
+.wa-btn {
+  background: none; border: none;
+  font-size: 18px; line-height: 1;
+  cursor: pointer; flex-shrink: 0;
+  padding: 4px 2px;
+  -webkit-tap-highlight-color: transparent;
+  opacity: .75;
+  transition: opacity .15s;
+  text-decoration: none;
+}
+.wa-btn:hover { opacity: 1; }
+
 .dist-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); flex-shrink: 0; text-align: right; min-width: 38px; font-variant-numeric: tabular-nums; }
 
 /* ── Filter bar ── */
@@ -804,6 +824,9 @@ body {
     <button class="ctrl-btn" id="bewerkBtn" onclick="toggleBewerken()" title="Volgorde aanpassen / adressen beheren">
       ✎ Bewerken
     </button>
+    <a class="ctrl-btn" id="waGroepBtn" href="https://chat.whatsapp.com/Lk57pyXtW7RLqprj0Hiadp?s=sw&p=a&mlu=4&ilr=4" target="_blank" rel="noopener" title="Open WhatsApp-groep" style="text-decoration:none">
+      💬 Groep
+    </a>
     <span class="route-stat" id="routeStat"></span>
   </div>
   <div class="filter-bar">
@@ -840,12 +863,12 @@ body {
         <div class="inst-card-desc">Exporteer je adressen uit Excel als CSV (puntkomma-gescheiden) en importeer ze hier. Gebruik één bestand voor zowel weekdag- als weekendadressen.</div>
         <div class="csv-box">
           <div class="csv-box-title">Verwacht CSV-formaat</div>
-          <div class="csv-code">nr;straat;kranten;dag;lat;lng;notitie
-3;Dorpsstraat;ST;weekdag;52.12302;6.50104;
-5;Dorpsstraat;TT VK;weekdag;52.12315;6.50112;achteringang
-100;Brinksweg;TT;weekend;;;brievenbus links
-7;Kerkpad;ST TEL;weekdag;;;hond, bellen</div>
-          <div class="csv-note"><strong>dag</strong> = <code>weekdag</code> of <code>weekend</code>. <strong>lat/lng</strong> voor GPS-sortering (optioneel). <strong>notitie</strong> voor bezorgbijzonderheden (optioneel). Scheidingsteken mag ook komma zijn.</div>
+          <div class="csv-code">nr;straat;kranten;dag;lat;lng;notitie;naam;tel
+3;Dorpsstraat;ST;weekdag;52.12302;6.50104;;Jansen;0612345678
+5;Dorpsstraat;TT VK;weekdag;52.12315;6.50112;achteringang;De Vries;
+100;Brinksweg;TT;weekend;;;brievenbus links;;
+7;Kerkpad;ST TEL;weekdag;;;hond, bellen;;</div>
+          <div class="csv-note"><strong>dag</strong> = <code>weekdag</code> of <code>weekend</code>. <strong>lat/lng</strong> voor GPS-sortering (optioneel). <strong>notitie</strong> voor bezorgbijzonderheden (optioneel). <strong>naam</strong> = abonneenaam (optioneel). <strong>tel</strong> = mobiel nummer voor WhatsApp (optioneel). Scheidingsteken mag ook komma zijn.</div>
         </div>
         <input type="file" id="csvInput" accept=".csv,.txt" style="display:none" onchange="handleImport(event)">
         <button class="action-btn" onclick="document.getElementById('csvInput').click()">
@@ -1113,7 +1136,7 @@ function totalen(adressenlijst) {
 
 // ── State ────────────────────────────────────────────────────────────────────
 let state = {
-  adressen: VOORBEELD.map((a, i) => ({ ...a, id: i+1, bezorgd: false, afstand: null, notitie: a.notitie||'' })),
+  adressen: VOORBEELD.map((a, i) => ({ ...a, id: i+1, bezorgd: false, afstand: null, notitie: a.notitie||'', naam: a.naam||'', tel: a.tel||'' })),
   modus: isWeekend() ? 'weekend' : 'weekdag',
   modusHandmatig: false,
   filter: 'todo',      // 'todo' | 'all' | 'done'
@@ -1146,6 +1169,8 @@ let _standaardRouteGeladen = false;
         dag: a.dag || 'weekdag',
         kranten: a.kranten || [],
         notitie: a.notitie || '',
+        naam: a.naam || '',
+        tel: a.tel || '',
         lat: a.lat ?? null, lng: a.lng ?? null,
         bezorgd: false, afstand: null,
       }));
@@ -1187,16 +1212,40 @@ function slaRouteOp() {
     localStorage.setItem('kb_route', JSON.stringify(state.adressen.map(a => ({
       nr: a.nr, straat: a.straat, dag: a.dag, kranten: a.kranten,
       notitie: a.notitie || '',
+      naam: a.naam || '',
+      tel: a.tel || '',
       lat: a.lat ?? null, lng: a.lng ?? null,
     }))));
   } catch(e) {}
 }
 
 // ── CSV parser ────────────────────────────────────────────────────────────────
+// Coördinaten-helper: herkent NL-formaat met punt als duizendtalscheiding
+// bijv. "521.394" → 52.1394, "5.213.924" → 52.13924, "6,52174" → 6.52174
+function parseCoord(str, isLat) {
+  if (!str) return NaN;
+  // Directe parse (komma vervangen door punt)
+  let val = parseFloat(str.replace(',', '.'));
+  const [lo, hi] = isLat ? [50, 54] : [3, 8]; // NL bbox
+  if (!isNaN(val) && val >= lo && val <= hi) return val;
+  // NL duizendtalformaat: verwijder alle punten, probeer dan te delen
+  const digits = str.replace(/\./g, '').replace(',', '.');
+  val = parseFloat(digits);
+  if (!isNaN(val) && val >= lo && val <= hi) return val;
+  if (!isNaN(val) && val > hi) {
+    for (let p = 1; p <= 6; p++) {
+      const c = val / Math.pow(10, p);
+      if (c >= lo && c <= hi) return c;
+    }
+  }
+  return NaN;
+}
+
 function parseCSV(tekst) {
   const regels = tekst.trim().split(/\r?\n/).map(r => r.trim()).filter(Boolean);
   if (!regels.length) throw new Error('Leeg bestand');
-  const delim = regels[0].split(';').length > regels[0].split(',').length ? ';' : ',';
+  const delim = regels[0].includes('\t') ? '\t'
+              : regels[0].split(';').length > regels[0].split(',').length ? ';' : ',';
 
   function parseRegel(r) {
     const velden = []; let cur = '', inQ = false;
@@ -1214,7 +1263,7 @@ function parseCSV(tekst) {
   const HEADERS = ['nr','huisnummer','nummer','straat','straatnaam','adres','kranten','krant','codes','dag','type','route','lat','latitude','lng','lon','longitude'];
   const heeftHeader = eersteRij.some(h => HEADERS.includes(h));
 
-  let nrI=0, strI=1, krI=2, dagI=3, latI=4, lngI=5, notI=-1;
+  let nrI=0, strI=1, krI=2, dagI=3, latI=4, lngI=5, notI=-1, naamI=-1, telI=-1;
   if (heeftHeader) {
     eersteRij.forEach((h,i) => {
       if (['nr','huisnummer','nummer','hnr'].includes(h)) nrI=i;
@@ -1224,6 +1273,8 @@ function parseCSV(tekst) {
       else if (['lat','latitude'].includes(h)) latI=i;
       else if (['lng','lon','longitude'].includes(h)) lngI=i;
       else if (['notitie','opmerking','note','notes','bijzonderheden','extra','info'].includes(h)) notI=i;
+      else if (['naam','name','abonnee','klant','bewoner'].includes(h)) naamI=i;
+      else if (['tel','telefoon','mobiel','phone','gsm','nummer','telefoonnummer','mobile'].includes(h)) telI=i;
     });
   }
 
@@ -1231,13 +1282,19 @@ function parseCSV(tekst) {
   return data.map((regel, idx) => {
     const v = parseRegel(regel);
     const kr = (v[krI]||'').replace(/,/g,' ').toUpperCase().split(/\s+/).filter(k => KRANTEN[k]);
-    const lat = parseFloat((v[latI]||'').replace(',','.'));
-    const lng = parseFloat((v[lngI]||'').replace(',','.'));
+    const lat = parseCoord(v[latI]||'', true);
+    const lng = parseCoord(v[lngI]||'', false);
+    // Telefoonnummer normaliseren naar internationaal formaat (NL: 06... → 316...)
+    let telRaw = telI >= 0 ? (v[telI]||'').replace(/[\s\-().]/g,'') : '';
+    if (telRaw.startsWith('0')) telRaw = '31' + telRaw.slice(1);
+    if (telRaw.startsWith('+')) telRaw = telRaw.slice(1);
     return {
       id: idx+1, nr: v[nrI]||'', straat: v[strI]||'',
       dag: normaliseerDag(v[dagI]),
       kranten: kr,
       notitie: notI >= 0 ? (v[notI] || '') : '',
+      naam: naamI >= 0 ? (v[naamI] || '') : '',
+      tel: telRaw,
       lat: isNaN(lat) ? null : lat,
       lng: isNaN(lng) ? null : lng,
       bezorgd: false, afstand: null,
@@ -1272,10 +1329,24 @@ function handleImport(event) {
 
 function exportCSV() {
   const heeftNotitie = state.adressen.some(a => a.notitie);
-  const regels = [heeftNotitie ? 'nr;straat;kranten;dag;lat;lng;notitie' : 'nr;straat;kranten;dag;lat;lng'];
+  const heeftNaam    = state.adressen.some(a => a.naam);
+  const heeftTel     = state.adressen.some(a => a.tel);
+  let header = 'nr;straat;kranten;dag;lat;lng';
+  if (heeftNotitie) header += ';notitie';
+  if (heeftNaam)    header += ';naam';
+  if (heeftTel)     header += ';tel';
+  const regels = [header];
   state.adressen.forEach(a => {
-    const basis = `${a.nr};${a.straat};${a.kranten.join(' ')};${a.dag};${a.lat??''};${a.lng??''}`;
-    regels.push(heeftNotitie ? `${basis};${a.notitie||''}` : basis);
+    let regel = `${a.nr};${a.straat};${a.kranten.join(' ')};${a.dag};${a.lat??''};${a.lng??''}`;
+    if (heeftNotitie) regel += `;${a.notitie||''}`;
+    if (heeftNaam)    regel += `;${a.naam||''}`;
+    if (heeftTel) {
+      // Tel terug naar leesbaar NL-formaat in export
+      let tel = a.tel || '';
+      if (tel.startsWith('31') && tel.length === 11) tel = '0' + tel.slice(2);
+      regel += `;${tel}`;
+    }
+    regels.push(regel);
   });
   const csv = regels.join('\n');
   const uitvoer = document.getElementById('exportOutput');
@@ -1464,6 +1535,14 @@ function render() {
     const notitie = a.notitie
       ? `<div class="addr-note"><span class="addr-note-icon">⚑</span>${a.notitie}</div>`
       : '';
+    const naamHtml = a.naam
+      ? `<div class="addr-naam">${a.naam}</div>`
+      : '';
+    const waMsg = encodeURIComponent('\n\nMet vriendelijke groet,\nPatrick');
+    const waBtn = a.tel
+      ? `<a class="wa-btn" href="https://wa.me/${a.tel}?text=${waMsg}" target="_blank" rel="noopener"
+           ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" title="WhatsApp ${a.naam||a.nr+' '+a.straat}">💬</a>`
+      : '';
     const mapsUrl = (a.lat != null && a.lng != null)
       ? `https://www.google.com/maps?q=${a.lat},${a.lng}`
       : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.nr+' '+a.straat)}`;
@@ -1476,8 +1555,9 @@ function render() {
           <span class="street">${a.straat}</span>
         </div>
         <div class="badge-row">${badges}${weBadge}</div>
-        ${notitie}${coords}
+        ${naamHtml}${notitie}${coords}
       </div>${dist}
+      ${waBtn}
       <a class="maps-btn" href="${mapsUrl}" target="_blank" rel="noopener"
          ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" title="Open in Google Maps">📍</a>
       <button class="del-btn" onclick="verwijderAdres(${a.id},event)">×</button>
@@ -1929,7 +2009,7 @@ function voegAdresToe() {
   const maxId = state.adressen.reduce((m, a) => Math.max(m, a.id), 0);
   state.adressen.push({
     id: maxId + 1, nr, straat, dag: _modalDag,
-    kranten, notitie, lat: null, lng: null,
+    kranten, notitie, naam: '', tel: '', lat: null, lng: null,
     bezorgd: false, afstand: null,
   });
   slaRouteOp();
