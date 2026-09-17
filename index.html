@@ -793,7 +793,8 @@ body {
     <div class="header-right">
       <span class="countdown" id="clock"></span>
       <button class="icon-btn" id="undoBtn" disabled title="Ongedaan maken (↩)" onclick="undoLaatste()">↩</button>
-<button class="icon-btn" id="wakeLockBtn" title="Scherm aan houden" onclick="toggleWakeLock()">☀</button>
+      <button class="icon-btn" id="wakeLockBtn" title="Scherm aan houden" onclick="toggleWakeLock()">☀</button>
+      <button class="icon-btn" id="orientBtn" title="Schermstand vergrendeld — tik om tijdelijk vrij te draaien" onclick="toggleOrientLock()">⤢</button>
       <button class="icon-btn" title="Thema wisselen" onclick="toggleTheme()">◑</button>
     </div>
   </div>
@@ -2163,6 +2164,41 @@ function saveInvoer() {
   toon('✓ Opgeslagen — aftellen gestart');
 }
 
+// ── Oriëntatie vergrendelen ───────────────────────────────────────────────────
+let _orientLocked = true; // standaard aan
+
+function lockOrientation(mode) {
+  // mode: 'landscape' | 'portrait' | null (vrijgeven)
+  if (!screen.orientation || !screen.orientation.lock) return;
+  if (mode === null || !_orientLocked) {
+    try { screen.orientation.unlock(); } catch(e) {}
+    return;
+  }
+  screen.orientation.lock(mode).catch(() => {});
+}
+
+function toggleOrientLock() {
+  _orientLocked = !_orientLocked;
+  const btn = document.getElementById('orientBtn');
+  if (_orientLocked) {
+    btn.textContent = '⤢';
+    btn.title = 'Schermstand vergrendeld — tik om tijdelijk vrij te draaien';
+    btn.classList.remove('active');
+    // Hersluit op basis van actieve tab
+    const actief = document.getElementById('invoerScreen').classList.contains('show') ? 'portrait'
+                 : document.getElementById('instScreen').classList.contains('show')   ? null
+                 : 'landscape';
+    lockOrientation(actief);
+    toon('Schermstand vergrendeld');
+  } else {
+    btn.textContent = '↻';
+    btn.title = 'Schermstand vrij — tik om te vergrendelen';
+    btn.classList.add('active');
+    try { if (screen.orientation) screen.orientation.unlock(); } catch(e) {}
+    toon('Schermstand vrij');
+  }
+}
+
 function switchTab(tab) {
   document.getElementById('routeTab').style.display = tab==='route' ? '' : 'none';
   document.getElementById('modusRow').style.display  = tab==='route' ? '' : 'none';
@@ -2171,6 +2207,10 @@ function switchTab(tab) {
   ['Route','Invoer','Inst'].forEach(t => {
     document.getElementById('tab'+t).classList.toggle('active', tab===t.toLowerCase());
   });
+  // Schermoriëntatie automatisch vergrendelen per tab
+  if      (tab === 'route')  lockOrientation('landscape');
+  else if (tab === 'invoer') lockOrientation('portrait');
+  else                       lockOrientation(null);
   if (tab !== 'route') render();
 }
 
@@ -2255,10 +2295,12 @@ if (typeof ResizeObserver !== 'undefined') {
 }
 updateHeaderHeight();
 
-// ── Landscape oriëntatie proberen te vergrendelen ─────────────────────────────
-// Werkt alleen als de app als PWA is geïnstalleerd of in fullscreen draait;
-// in een gewone browsertab faalt dit stil.
-if (screen.orientation && typeof screen.orientation.lock === 'function') {
-  screen.orientation.lock('landscape').catch(() => {});
+// ── Startoriëntatie vergrendelen (route-tab is standaard actief) ──────────────
+// lockOrientation handelt ontbrekende API-ondersteuning stil af.
+lockOrientation('landscape');
+// Knop verbergen als oriëntatie-API helemaal niet beschikbaar is (bijv. iOS Safari)
+if (!screen.orientation || typeof screen.orientation.lock !== 'function') {
+  const ob = document.getElementById('orientBtn');
+  if (ob) ob.style.display = 'none';
 }
 </script>
