@@ -287,11 +287,11 @@ body {
   color: var(--text-1); line-height: 1; min-width: 36px; flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
-.street { font-size: 14px; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.street { font-size: 19px; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .addr-row.bezorgd .house-nr, .addr-row.bezorgd .street { text-decoration: line-through; text-decoration-color: var(--text-3); }
 
-.badge-row { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
-.badge { font-family: var(--font-mono); font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; color: #fff; letter-spacing: .01em; }
+.badge-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: center; }
+.badge { font-family: var(--font-mono); font-size: 19px; font-weight: 600; padding: 3px 9px; border-radius: 6px; color: #fff; letter-spacing: .01em; }
 .we-badge {
   font-family: var(--font-mono); font-size: 9px; font-weight: 600;
   padding: 2px 5px; border-radius: 4px; letter-spacing: .04em;
@@ -592,8 +592,8 @@ body {
   .app-naam-lang { display: none; }   /* verberg lange naam in landscape */
   .app-naam-kort { display: inline; } /* toon korte naam KB */
   .countdown { font-size: 12px; }     /* klok kleiner */
-  .icon-btn { width: 26px; height: 26px; font-size: 12px; }
-  .header-right { gap: 3px; }
+  /* icon-btn: zelfde grootte als portrait (30×30) */
+  .header-right { gap: 5px; }
 
   /* Weerstrip in landscape: altijd precies 2 regels */
   .wx-strip { flex-wrap: wrap; gap: 2px 0; }
@@ -661,9 +661,9 @@ body {
     padding: 16px 16px 56px;
   }
 
-  /* Route controls: compacter */
-  .route-controls { padding: 5px 12px; }
-  .ctrl-btn { padding: 4px 9px; font-size: 11px; }
+  /* Route controls: zelfde grootte als portrait */
+  .route-controls { padding: 6px 12px; }
+  .ctrl-btn { padding: 5px 11px; font-size: 12px; }
 
   /* Filter bar */
   .filter-bar { padding: 0 10px; }
@@ -675,6 +675,8 @@ body {
   /* Adresrijen: compacter */
   .addr-row { padding: 7px 14px; gap: 9px; }
   .house-nr { font-size: 17px; }
+  .street { font-size: 17px; }
+  .badge { font-size: 17px; }
 
   /* Tab-bar: vaste positie onderin, volle breedte, zonder tekstlabels */
   .tab-bar {
@@ -2166,35 +2168,61 @@ function saveInvoer() {
 
 // ── Oriëntatie vergrendelen ───────────────────────────────────────────────────
 let _orientLocked = true; // standaard aan
+let _targetOrient = 'landscape'; // gewenste stand bijhouden voor hersluit-listener
 
-function lockOrientation(mode) {
+async function lockOrientation(mode) {
   // mode: 'landscape' | 'portrait' | null (vrijgeven)
-  if (!screen.orientation || !screen.orientation.lock) return;
+  _targetOrient = mode;
+  if (!screen.orientation || !screen.orientation.lock) return false;
   if (mode === null || !_orientLocked) {
     try { screen.orientation.unlock(); } catch(e) {}
-    return;
+    return true;
   }
-  screen.orientation.lock(mode).catch(() => {});
+  try {
+    await screen.orientation.lock(mode);
+    return true;
+  } catch(e) {
+    return false;
+  }
 }
 
-function toggleOrientLock() {
+// Hersluit automatisch als het scherm toch draait (veiligheidsnet)
+window.addEventListener('orientationchange', () => {
+  if (!_orientLocked || !_targetOrient) return;
+  if (!screen.orientation || !screen.orientation.lock) return;
+  setTimeout(() => screen.orientation.lock(_targetOrient).catch(() => {}), 150);
+});
+
+async function toggleOrientLock() {
   _orientLocked = !_orientLocked;
   const btn = document.getElementById('orientBtn');
   if (_orientLocked) {
     btn.textContent = '⤢';
     btn.title = 'Schermstand vergrendeld — tik om tijdelijk vrij te draaien';
     btn.classList.remove('active');
+
+    // Probeer fullscreen te activeren als we niet in standalone/fullscreen-modus zitten
+    // (screen.orientation.lock vereist fullscreen of geïnstalleerde PWA)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || window.navigator.standalone === true;
+    if (!isStandalone && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+      try { await document.documentElement.requestFullscreen(); } catch(e) {}
+    }
+
     // Hersluit op basis van actieve tab
     const actief = document.getElementById('invoerScreen').classList.contains('show') ? 'portrait'
                  : document.getElementById('instScreen').classList.contains('show')   ? null
                  : 'landscape';
-    lockOrientation(actief);
-    toon('Schermstand vergrendeld');
+    const ok = await lockOrientation(actief);
+    toon(ok ? 'Schermstand vergrendeld' : 'Vergrendelen mislukt — gebruik de app als PWA');
   } else {
     btn.textContent = '↻';
     btn.title = 'Schermstand vrij — tik om te vergrendelen';
     btn.classList.add('active');
     try { if (screen.orientation) screen.orientation.unlock(); } catch(e) {}
+    if (document.fullscreenElement && document.exitFullscreen) {
+      try { document.exitFullscreen(); } catch(e) {}
+    }
     toon('Schermstand vrij');
   }
 }
@@ -2297,7 +2325,7 @@ updateHeaderHeight();
 
 // ── Startoriëntatie vergrendelen (route-tab is standaard actief) ──────────────
 // lockOrientation handelt ontbrekende API-ondersteuning stil af.
-lockOrientation('landscape');
+lockOrientation('landscape'); // fire-and-forget; werkt in PWA-modus
 // Knop verbergen als oriëntatie-API helemaal niet beschikbaar is (bijv. iOS Safari)
 if (!screen.orientation || typeof screen.orientation.lock !== 'function') {
   const ob = document.getElementById('orientBtn');
