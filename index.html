@@ -2203,20 +2203,23 @@ async function toggleOrientLock() {
     btn.title = 'Schermstand vergrendeld — tik om tijdelijk vrij te draaien';
     btn.classList.remove('active');
 
-    // Probeer fullscreen te activeren als we niet in standalone/fullscreen-modus zitten
-    // (screen.orientation.lock vereist fullscreen of geïnstalleerde PWA)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-                      || window.navigator.standalone === true;
-    if (!isStandalone && !document.fullscreenElement && document.documentElement.requestFullscreen) {
-      try { await document.documentElement.requestFullscreen(); } catch(e) {}
-    }
-
     // Hersluit op basis van actieve tab
     const actief = document.getElementById('invoerScreen').classList.contains('show') ? 'portrait'
                  : document.getElementById('instScreen').classList.contains('show')   ? null
                  : 'landscape';
-    const ok = await lockOrientation(actief);
-    toon(ok ? 'Schermstand vergrendeld' : 'Vergrendelen mislukt — gebruik de app als PWA');
+
+    // Probeer direct (werkt in echte PWA-modus met manifest)
+    let ok = await lockOrientation(actief);
+
+    // Fallback: fullscreen activeren zodat lock alsnog werkt in browsermodus
+    if (!ok && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+      try {
+        await document.documentElement.requestFullscreen();
+        ok = await lockOrientation(actief);
+      } catch(e) {}
+    }
+
+    toon(ok ? 'Schermstand vergrendeld' : 'Vergrendeling aan — herinstalleer de app voor volledig effect');
   } else {
     btn.textContent = '↻';
     btn.title = 'Schermstand vrij — tik om te vergrendelen';

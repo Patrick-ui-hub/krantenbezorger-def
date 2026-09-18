@@ -1,0 +1,18 @@
+{
+  "name": "Krantenbezorger",
+  "short_name": "KB",
+  "description": "GPS-gestuurde bezorgroute voor krantenwijken",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1e1e22",
+  "theme_color": "#f09a1f",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
