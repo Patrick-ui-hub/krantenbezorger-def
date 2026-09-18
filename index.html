@@ -290,7 +290,7 @@ body {
 .street { font-size: 19px; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .addr-row.bezorgd .house-nr, .addr-row.bezorgd .street { text-decoration: line-through; text-decoration-color: var(--text-3); }
 
-.badge-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: center; }
+.badge-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .badge { font-family: var(--font-mono); font-size: 19px; font-weight: 600; padding: 3px 9px; border-radius: 6px; color: #fff; letter-spacing: .01em; }
 .we-badge {
   font-family: var(--font-mono); font-size: 9px; font-weight: 600;
@@ -1248,6 +1248,8 @@ function parseCoord(str, isLat) {
 }
 
 function parseCSV(tekst) {
+  // Verwijder UTF-8 BOM als Excel die heeft toegevoegd (﻿)
+  tekst = tekst.replace(/^﻿/, '');
   const regels = tekst.trim().split(/\r?\n/).map(r => r.trim()).filter(Boolean);
   if (!regels.length) throw new Error('Leeg bestand');
   const delim = regels[0].includes('\t') ? '\t'
